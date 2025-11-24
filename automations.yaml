@@ -87,117 +87,36 @@
 
     '
   triggers:
-  - entity_id: sensor.meter_f094
-    below: 14
+  - entity_id:
+    - sensor.meter_f094
+    below: 15
     trigger: numeric_state
   conditions:
-  - condition: state
-    entity_id: switch.plug_mini_jp_41de
-    state:
-    - 'off'
-  - condition: template
-    value_template: '{{ states(''sensor.meter_f094'') not in [''unavailable'', ''unknown'']
-      }}'
+  - condition: time
+    after: '23:00:00'
+    before: 07:00:00
+  - condition: numeric_state
+    entity_id: sensor.plug_mini_jp_41de_power
+    below: 2
   actions:
   - target:
       entity_id: switch.plug_mini_jp_41de
     action: switch.turn_on
     data: {}
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 10
+      milliseconds: 0
+  - action: switch.turn_on
+    metadata: {}
+    data: {}
+    target:
+      entity_id: switch.bot_354b
   - data:
       message: "\U0001F525 ストーブのプラグをオンにしました。（{{ now().strftime('%H:%M:%S') }}）\n室温:
         {{ states('sensor.meter_f094') }}℃"
     action: notify.mobile_app_iphone_12mini_a2398
-  - alias: 着火確認（2分後）
-    sequence:
-    - delay:
-        minutes: 2
-    - target:
-        entity_id: sensor.plug_mini_jp_41de_power_power
-      action: homeassistant.update_entity
-    - delay:
-        seconds: 3
-    - choose:
-      - conditions:
-        - condition: template
-          value_template: '{{ states(''sensor.plug_mini_jp_41de_power_power'') not
-            in [''unavailable'', ''unknown''] }}'
-        - condition: template
-          value_template: '{{ states(''sensor.plug_mini_jp_41de_power'') | float(0)
-            < 5 }}'
-        sequence:
-        - data:
-            message: ⚠️ ストーブの着火を確認できません（{{ states('sensor.plug_mini_jp_e45e_power')
-              }}W）。ボタンで点火を試みます。
-          action: notify.mobile_app_iphone_12mini_a2398
-        - target:
-            entity_id: switch.bot_354b
-          action: switch.turn_on
-          data: {}
-        - delay:
-            seconds: 3
-      default:
-      - data:
-          message: ✅ ストーブの着火を確認しました（{{ states('sensor.plug_mini_jp_e45e_power') }}W）
-        action: notify.mobile_app_iphone_12mini_a2398
-  - alias: 5分ごとの安全監視ループ（最大1時間）
-    repeat:
-      count: 12
-      sequence:
-      - delay:
-          minutes: 5
-      - alias: 安全条件チェック
-        choose:
-        - conditions:
-          - condition: numeric_state
-            entity_id: sensor.meter_f094
-            above: 16
-          sequence:
-          - data:
-              message: '✅ [自動停止] 室温が16℃以上になったためストーブを停止します。（{{ now().strftime(''%H:%M:%S'')
-                }}）
-
-                現在温度: {{ states(''sensor.meter_f094'') }}℃'
-            action: notify.mobile_app_iphone_12mini_a2398
-          - target:
-              entity_id: switch.plug_mini_jp_41de
-            action: switch.turn_off
-          - stop: 目標温度に到達したため停止
-        - conditions:
-          - condition: template
-            value_template: '{{ states(''sensor.meter_f094'') in [''unavailable'',
-              ''unknown''] }}'
-          sequence:
-          - data:
-              message: ⚠️ [安全停止] 温度センサーが異常です。安全のためストーブを停止します。（{{ now().strftime('%H:%M:%S')
-                }}）
-            action: notify.mobile_app_iphone_12mini_a2398
-          - target:
-              entity_id: switch.plug_mini_jp_41de
-            action: switch.turn_off
-          - stop: センサー異常のため停止
-        - conditions:
-          - condition: state
-            entity_id: switch.plug_mini_jp_41de
-            state: 'off'
-          sequence:
-          - data:
-              message: ℹ️ ストーブのプラグが手動でオフにされました。監視を終了します。（{{ now().strftime('%H:%M:%S')
-                }}）
-            action: notify.mobile_app_iphone_12mini_a2398
-          - stop: 手動停止を検知
-  - alias: 最大稼働時間到達後の自動停止
-    sequence:
-    - data:
-        message: '⏰ [タイムアウト] 最大稼働時間（4時間）に到達したためストーブを停止します。（{{ now().strftime(''%H:%M:%S'')
-          }}）
-
-          現在温度: {{ states(''sensor.meter_f094'') }}℃'
-      action: notify.mobile_app_iphone_12mini_a2398
-    - delay:
-        seconds: 2
-    - target:
-        entity_id: switch.plug_mini_jp_41de
-      action: switch.turn_off
   mode: restart
 - id: '1738129881775'
   alias: 全体にアナウンス
