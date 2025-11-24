@@ -1,0 +1,276 @@
+blueprint:
+
+  name: 湿度管理
+  description: |
+    湿度条件に応じてプラグを制御するオートメーション。
+    ・湿度{{ humidity_on_threshold }}%以上でプラグON＋10分OFFタイマー＆1時間最大稼働タイマー起動
+    ・湿度{{ humidity_off_threshold }}%以下でプラグOFF＋全タイマーキャンセル
+    ・10分タイマー終了時：再評価し、湿度が高ければ継続／低ければOFF
+    ・1時間タイマー終了時：運転停止
+    ・2時間ごとに湿度高くかつプラグOFFなら再ON
+  domain: automation
+ 
+  input:
+    humidity_sensor:
+      name: 湿度センサー
+      description: "例: sensor.meter_6b39_humidity"
+      selector:
+        entity:
+          domain: sensor
+          device_class: humidity
+
+    plug_switch:
+      name: プラグ
+      description: "例: switch.plug_mini_jp_3876"
+      selector:
+        entity:
+          domain: switch
+
+    bot_switch:
+      name: ボット
+      description: "例: switch.bot_bbf4"
+      selector:
+        entity:
+          domain: switch
+
+    notify_device:
+      name: 通知先
+      description: "例: iphone_12mini_a2398"
+      selector:
+        device:
+          integration: mobile_app
+
+    notify_enabled:
+      name: 通知を有効にする
+      description: "trueで通知を有効にします"
+      default: true
+      selector:
+        boolean: {}
+
+    area:
+      name: 管理するエリア名
+      description: "例: 脱衣所、地下室など。通知タイトルに使用されます。"
+      selector:
+        area: {}
+
+    timer_off:
+      name: オフタイマー
+      description: "プラグ自動OFF用のタイマー。例: timer.datsuijo_plug_off"
+      selector:
+        entity:
+          domain: timer
+
+    timer_max:
+      name: 最大稼働タイマー
+      description: "プラグ最大稼働時間用タイマー。例: timer.datsuijo_plug_max"
+      selector:
+        entity:
+          domain: timer
+
+    humidity_on_threshold:
+      name: プラグON湿度閾値
+      description: "この値以上でプラグON（例: 75）"
+      default: 75
+      selector:
+        number:
+          min: 0
+          max: 100
+          unit_of_measurement: "%"
+
+    humidity_off_threshold:
+      name: プラグOFF湿度閾値
+      description: "この値以下でプラグOFF（例: 70）"
+      default: 70
+      selector:
+        number:
+          min: 0
+          max: 100
+          unit_of_measurement: "%"
+
+trigger:
+  - platform: numeric_state
+    entity_id: !input humidity_sensor
+    above: !input humidity_on_threshold
+    id: humidity_high
+
+  - platform: numeric_state
+    entity_id: !input humidity_sensor
+    below: !input humidity_off_threshold
+    id: humidity_low
+
+  - platform: event
+    event_type: timer.finished
+    event_data:
+      entity_id: !input timer_off
+    id: plug_off_timer_done
+
+  - platform: event
+    event_type: timer.finished
+    event_data:
+      entity_id: !input timer_max
+    id: max_timer_done
+
+  - platform: time_pattern
+    hours: "/2"
+    minutes: 0
+    seconds: 0
+    id: periodic_check
+
+condition: []
+
+variables:
+  humidity_on_threshold: !input humidity_on_threshold
+  humidity_off_threshold: !input humidity_off_threshold
+  area_name: !input area
+  notify_enabled: !input notify_enabled
+
+action:
+  - choose:
+      - conditions:
+          - condition: or
+            conditions:
+              - condition: trigger
+                id: humidity_high
+              - condition: trigger
+                id: periodic_check
+          - condition: numeric_state
+            entity_id: !input humidity_sensor
+            above: !input humidity_on_threshold
+          - condition: state
+            entity_id: !input plug_switch
+            state: "off"
+        sequence:
+          - service: switch.turn_on
+            target:
+              entity_id: !input plug_switch
+
+          - if:
+              - condition: template
+                value_template: "{{ notify_enabled }}"
+            then:
+              - alias: "湿度高→プラグON通知"
+                domain: mobile_app
+                type: notify
+                device_id: !input notify_device
+                message: >
+                  {% if trigger.id == 'humidity_high' %}
+                    湿度{{ humidity_on_threshold }}%以上のためプラグONしました
+                  {% else %}
+                    定期チェックで湿度{{ humidity_on_threshold }}%以上、プラグONしました
+                  {% endif %}
+                title: "【除湿: {{ area_name }}】"
+
+          - service: timer.start
+            target:
+              entity_id: !input timer_off
+
+          - service: timer.start
+            target:
+              entity_id: !input timer_max
+
+          - delay: "00:00:10"
+
+          - service: switch.turn_on
+            target:
+              entity_id: !input bot_switch
+
+      - conditions:
+          - condition: trigger
+            id: humidity_low
+          - condition: state
+            entity_id: !input plug_switch
+            state: "on"
+        sequence:
+          - service: switch.turn_off
+            target:
+              entity_id: !input plug_switch
+
+          - if:
+              - condition: template
+                value_template: "{{ notify_enabled }}"
+            then:
+              - alias: "湿度低→プラグOFF通知"
+                domain: mobile_app
+                type: notify
+                device_id: !input notify_device
+                message: "湿度{{ humidity_off_threshold }}%以下のためプラグOFFしました"
+                title: "【除湿: {{ area_name }}】"
+
+          - service: timer.cancel
+            target:
+              entity_id:
+                - !input timer_off
+                - !input timer_max
+
+      - conditions:
+          - condition: trigger
+            id: max_timer_done
+        sequence:
+          - service: switch.turn_off
+            target:
+              entity_id: !input plug_switch
+
+          - if:
+              - condition: template
+                value_template: "{{ notify_enabled }}"
+            then:
+              - alias: "最大稼働終了→通知"
+                domain: mobile_app
+                type: notify
+                device_id: !input notify_device
+                message: "【最大1時間稼働終了】プラグOFFしました"
+                title: "【除湿: {{ area_name }}】"
+
+          - service: timer.cancel
+            target:
+              entity_id:
+                - !input timer_off
+                - !input timer_max
+
+      - conditions:
+          - condition: trigger
+            id: plug_off_timer_done
+        sequence:
+          - choose:
+              - conditions:
+                  - condition: numeric_state
+                    entity_id: !input humidity_sensor
+                    above: !input humidity_on_threshold
+                sequence:
+                  - if:
+                      - condition: template
+                        value_template: "{{ notify_enabled }}"
+                    then:
+                      - alias: "再評価→継続通知"
+                        domain: mobile_app
+                        type: notify
+                        device_id: !input notify_device
+                        message: "湿度{{ humidity_on_threshold }}%以上のため運転継続、10分タイマー再スタート"
+                        title: "【除湿: {{ area_name }}】"
+
+                  - service: timer.start
+                    target:
+                      entity_id: !input timer_off
+            default:
+              - service: switch.turn_off
+                target:
+                  entity_id: !input plug_switch
+
+              - if:
+                  - condition: template
+                    value_template: "{{ notify_enabled }}"
+                then:
+                  - alias: "再評価→停止通知"
+                    domain: mobile_app
+                    type: notify
+                    device_id: !input notify_device
+                    message: "湿度下がったためプラグOFFしました"
+                    title: "【除湿: {{ area_name }}】"
+
+              - service: timer.cancel
+                target:
+                  entity_id:
+                    - !input timer_off
+                    - !input timer_max
+
+mode: restart

@@ -1,0 +1,49 @@
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+
+automation: !include automations.yaml
+binary_sensor: !include binary_sensor.yaml
+climate: !include climate.yaml
+fan: !include fan.yaml
+group: !include group.yaml
+http: !include http.yaml
+input_text: !include input_text.yaml
+light: !include light.yaml
+media_player: !include media_player.yaml
+mqtt: !include mqtt.yaml
+rest_command: !include rest_command.yaml
+scene: !include scenes.yaml
+script: !include scripts.yaml
+sensor: !include sensor.yaml
+switch: !include switch.yaml
+
+template: !include_dir_merge_list templates/ 
+#ディレクトリ内のすべてのファイルを読み込んで、1つのリストにマージ
+
+timer: !include timer.yaml
+# tts: !include tts.yaml
+utility_meter: !include utility_meter.yaml
+
+
+homeassistant:
+  allowlist_external_dirs:
+    - "/config/logs"
+
+  auth_providers:
+    - type: homeassistant
+    - type: trusted_networks
+      trusted_networks:
+        - 192.168.1.0/24  # または特定のIPだけにするなら 192.168.1.113
+      trusted_users:
+        192.168.1.113: c2ae2a63d75142efb13be6888a6f534e
+
+# ---custom_components---
+# delete-file-home-assistant
+delete:
+# SmartIR
+smartir:

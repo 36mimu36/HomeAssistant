@@ -1,0 +1,46 @@
+# 機密情報
+secrets.yaml
+*.db
+*.db-shm
+*.db-wal
+
+# ログ
+*.log
+*.log.*
+logs/
+
+# 依存関係とキャッシュ
+deps/
+tts/
+__pycache__/
+*.pyc
+
+# 一時ファイル
+.cloud/
+.google.token
+.HA_VERSION
+.ha_run.lock
+image/
+
+# フォント・テーマ
+fonts/
+themes/
+
+# 生成されるメディアファイル
+www/
+
+# OS固有
+.DS_Store
+Thumbs.db
+
+# エディタ
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# その他
+zigbee2mqtt/
+
+home-assistant_v2.*

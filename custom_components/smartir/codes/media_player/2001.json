@@ -1,0 +1,14 @@
+{
+  "manufacturer": "Custom",
+  "supportedModels": ["ZS06_FireTV"],
+  "supportedController": "MQTT",
+  "commandsEncoding": "Raw",
+
+  "commands": {
+    "on": "{\"ir_code_to_send\":\"C10JhAKcBIQCOwKEAuAHB+ADE0ALgAMBW2vgLTMFOwKcBDsCQAEBnASAS8AHAzsChALgAwtADwE7AkBnATsCgBcNOwKcBDsCOwKEApwEhAJAB0AD4AMLQA8BOwJAMwGEAsAX4AcHAzsChALAEwk7AoQCOwKEAjsC\"}",
+    "off": "{\"ir_code_to_send\":\"C10JhAKcBIQCOwKEAuAHB+ADE0ALgAMBW2vgLTMFOwKcBDsCQAEBnASAS8AHAzsChALgAwtADwE7AkBnATsCgBcNOwKcBDsCOwKEApwEhAJAB0AD4AMLQA8BOwJAMwGEAsAX4AcHAzsChALAEwk7AoQCOwKEAjsC\"}",
+    "volumeUp": "{\"ir_code_to_send\":\"C10JVwJXApMCnwRXAoAB4AMLAVcC4AEXwAENg2pdCZMCVwKTAp8EkwJAB0ADgAuAAQifBFcCVwKTAldgAUAHQDMBVwJAAYAbgAHgDwuAAcAzBZMCnwSTAkAHQAPgBQsBVwLgBQFAMwKTAlcgAeADG+APCwVXAlcCVwI=\"}",
+    "volumeDown": "{\"ir_code_to_send\":\"BVAJjAKdBIADAVYCgANADwBWYAEFjAKdBFYC4AUBBUBoUAlWAkAXBJ0EjAJWoAGAC0APAYwC4AMLQA8BVgLgAzMBVgLAAQGdBEAbgAHgAwuAAUAzBIwCnQRWYAPAAUAPwAGACwuMAlYCjAJWAlYCVgI=\"}",
+    "mute": "{\"ir_code_to_send\":\"BTsJkAJMAoADA5cEkAJACwOXBEwCwAEElwSQAkxgAcAHARtqgDOAAYAfCZAClwRMAkwCkAJAAwOXBJACQAfgAQPAM4ATgB8FTAKXBEwCwAGACwuQAkwCTAJMAkwCTAI=\"}"
+  }
+}

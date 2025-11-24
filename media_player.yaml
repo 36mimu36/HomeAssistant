@@ -1,0 +1,25 @@
+# 1F 居間 テレビ
+- platform: smartir
+  name: livingroom_tv
+  unique_id: livingroom_tv
+  device_code: 1001
+  controller_data: zigbee2mqtt/ir_blaster_living/set
+  power_sensor: binary_sensor.tv_1f_livingroom_power
+
+# 2F 和室 テレビ
+- platform: smartir
+  name: jsroom_tv
+  unique_id: jsroom_tv
+  device_code: 2001
+  controller_data: zigbee2mqtt/ir_blaster_jsroom_01/set
+  power_sensor: binary_sensor.tv_2f_jsroom_power
+
+
+# ON/OFF
+# C10JhAKcBIQCOwKEAuAHB+ADE0ALgAMBW2vgLTMFOwKcBDsCQAEBnASAS8AHAzsChALgAwtADwE7AkBnATsCgBcNOwKcBDsCOwKEApwEhAJAB0AD4AMLQA8BOwJAMwGEAsAX4AcHAzsChALAEwk7AoQCOwKEAjsC
+# volume_up
+# C10JVwJXApMCnwRXAoAB4AMLAVcC4AEXwAENg2pdCZMCVwKTAp8EkwJAB0ADgAuAAQifBFcCVwKTAldgAUAHQDMBVwJAAYAbgAHgDwuAAcAzBZMCnwSTAkAHQAPgBQsBVwLgBQFAMwKTAlcgAeADG+APCwVXAlcCVwI=
+# volume_down
+# BVAJjAKdBIADAVYCgANADwBWYAEFjAKdBFYC4AUBBUBoUAlWAkAXBJ0EjAJWoAGAC0APAYwC4AMLQA8BVgLgAzMBVgLAAQGdBEAbgAHgAwuAAUAzBIwCnQRWYAPAAUAPwAGACwuMAlYCjAJWAlYCVgI=
+# mute
+# BTsJkAJMAoADA5cEkAJACwOXBEwCwAEElwSQAkxgAcAHARtqgDOAAYAfCZAClwRMAkwCkAJAAwOXBJACQAfgAQPAM4ATgB8FTAKXBEwCwAGACwuQAkwCTAJMAkwCTAI=

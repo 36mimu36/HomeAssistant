@@ -1,0 +1,45 @@
+esphome:
+  name: test-weight
+  friendly_name: test_weight
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "MscHLICjN9dwKPVnkgOrY0bEvnZI6te2MIQ8pLuqVUs="
+
+ota:
+  - platform: esphome
+    password: "ff844387d0d471ba2a87002aac5e61f0"
+
+wifi:
+  ssid: !secret wifi_ssid_1sthome-1f-1st
+  password: !secret wifi_password_1sthome-1f-1st
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Test-Weight Fallback Hotspot"
+    password: "tKfhcZuti5QQ"
+
+captive_portal:
+
+sensor:
+  - platform: hx711
+    name: "Weight Sensor"
+    dout_pin: GPIO4  # → DTに接続したGPIO
+    clk_pin: GPIO5   # → SCKに接続したGPIO
+    gain: 128
+    update_interval: 3s
+    filters:
+      - calibrate_linear:
+          - -112016 -> 0
+          - -975430 -> 2000
+    unit_of_measurement: g
+    

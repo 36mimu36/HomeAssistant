@@ -1,0 +1,234 @@
+# 1F 居間 扇風機
+- fan:
+    - name: "livingroom_fan_01"
+      unique_id: livingroom_fan_01
+
+      # state: "{{ states('input_boolean.state') }}"
+      optimistic: true
+
+      # 可用性ガード（使用しているエンティティが未定義の場合に、一時的に“利用不可”にする）
+      availability: >-
+        {{ states('light.livingroom_light_01') in ['on','off']
+           and states('sensor.meter_c6a1') not in ['unknown','unavailable','none','None',''] }}
+
+      turn_on:
+        # 照度センサーの取りこぼし防止に少し待機
+        - delay:
+            milliseconds: 500
+
+        # ライトの元状態を保存
+        - variables:
+            was_on: "{{ is_state('light.livingroom_light_01', 'on') }}"
+
+        # 全消し
+        - service: mqtt.publish
+          data:
+            topic: zigbee2mqtt/ir_blaster_living/set
+            payload: '{"ir_code_to_send":"DwsNXQeHAV8FagH2AYcB9gHgAwfAC0AXQANAD0ADC4cBXwWHAfYBagFfBYADQAtAA4APgBsB9gFAB0ADQAvgBwOAFwNfBWoBQAsBXwVAA0ALAWoB4AMHB18FagH2AYcB"}'
+
+        # 信号の取りこぼし防止に少し待機
+        - delay:
+            milliseconds: 500
+
+        # ライトが元々ONだった場合のみ、再点灯
+        - choose:
+            - conditions:
+                - condition: template
+                  value_template: "{{ was_on }}"
+              sequence:
+                - service: light.turn_on
+                  target:
+                    entity_id: light.livingroom_light_01
+                - delay:
+                    milliseconds: 500
+
+        # 室温に応じて回転方向を切替
+        - variables:
+            current_temp: "{{ states('sensor.meter_c6a1') | float(0) }}"
+            threshold_25: 25 # 閾値25度
+
+        - choose:
+            # 閾値以上 → 夏（下向き）に回す
+            - conditions:
+                - condition: template
+                  value_template: "{{ current_temp >= threshold_25 }}"
+              sequence:
+                - service: mqtt.publish
+                  data:
+                    topic: zigbee2mqtt/ir_blaster_living/set
+                    payload: '{"ir_code_to_send":"C/IMcweBAVkFgQHmAeAhA8AvQAdAA8A7QAtAA8AP4BcH4AcrQA9AA8A3B1kFgQHmAYEB"}'
+          default:
+            # 閾値未満 → 冬（上向き）に回す
+            - service: mqtt.publish
+              data:
+                topic: zigbee2mqtt/ir_blaster_living/set
+                payload: '{"ir_code_to_send":"Cw0NVgeKAUIFigHiAeAhA8AvQAdAA8A7QAtAA8AP4BcHwCvgAwfACwviAYoBQgWKAeIBigE="}'
+            
+      turn_off:
+        # 照度センサーの取りこぼし防止に少し待機
+        - delay:
+            milliseconds: 500
+            
+        # ライトの元状態を保存
+        - variables:
+            was_on: "{{ is_state('light.livingroom_light_01', 'on') }}"
+
+        # 全消し
+        - service: mqtt.publish
+          data:
+            topic: zigbee2mqtt/ir_blaster_living/set
+            payload: '{"ir_code_to_send":"DwsNXQeHAV8FagH2AYcB9gHgAwfAC0AXQANAD0ADC4cBXwWHAfYBagFfBYADQAtAA4APgBsB9gFAB0ADQAvgBwOAFwNfBWoBQAsBXwVAA0ALAWoB4AMHB18FagH2AYcB"}'
+
+        # 信号の取りこぼし防止に少し待機
+        - delay:
+            milliseconds: 500
+
+        # ライトが元々ONだった場合のみ、再点灯
+        - choose:
+            - conditions:
+                - condition: template
+                  value_template: "{{ was_on }}"
+              sequence:
+                - service: light.turn_on
+                  target:
+                    entity_id: light.livingroom_light_01
+                - delay:
+                    milliseconds: 500
+
+# 2F 洋室 扇風機
+- fan:
+    - name: "wsroom_fan_01"
+      unique_id: wsroom_fan_01
+
+      # state: "{{ states('input_boolean.state') }}"
+      optimistic: true
+
+      # 可用性ガード（使用しているエンティティが未定義の場合に、一時的に“利用不可”にする）
+      availability: >-
+        {{ states('light.wsroom_light_02') in ['on','off']
+           and states('sensor.meter_a13c_temperature') not in ['unknown','unavailable','none','None',''] }}
+
+      turn_on:
+        # 照度センサーの取りこぼし防止に少し待機
+        - delay:
+            milliseconds: 500
+
+        # ライトの元状態を保存
+        - variables:
+            was_on: "{{ is_state('light.wsroom_light_02', 'on') }}"
+
+        # 全消し
+        - service: mqtt.publish
+          data:
+            topic: zigbee2mqtt/ir_blaster_wsroom/set
+            payload: '{"ir_code_to_send":"D20MlAdVAZ0FVQEkAvIAJAJABwAkIAsAJCAD4AMLACQgDwAkYAMAhiAHB50FJAEkAlUBQAdAAwAkIAtAA0ALQAMAJKAPBSQCJAGGAkBXAfIAgAdAEwPyACQCQAcBJAGAKwAkYAfgAwsAJGATCZ0AnQUkASQCJAE="}'
+
+        # 信号の取りこぼし防止に少し待機
+        - delay:
+            milliseconds: 500
+
+        # ライトが元々ONだった場合のみ、再点灯
+        - choose:
+            - conditions:
+                - condition: template
+                  value_template: "{{ was_on }}"
+              sequence:
+                - service: light.turn_on
+                  target:
+                    entity_id: light.wsroom_light_02
+                - delay:
+                    milliseconds: 500
+
+        # 室温に応じて回転方向を切替
+        - variables:
+            current_temp: "{{ states('sensor.meter_a13c_temperature') | float(0) }}"
+            threshold: 25 # 閾値25度
+
+        - choose:
+            # 閾値以上 → 夏（下向き）に回す
+            - conditions:
+                - condition: template
+                  value_template: "{{ current_temp >= threshold }}"
+              sequence:
+                - service: mqtt.publish
+                  data:
+                    topic: zigbee2mqtt/ir_blaster_wsroom/set
+                    payload: '{"ir_code_to_send":"D9wMeQdeAUMFXgHnAY4B5wHgDwcAjmABQAcD5wFeAYAvgAeAC0AXA44BQwWAA0ABA+cBXgGAAwCOYAFABwHnAUATQAdAAwteAUMFXgHnAY4BQwXgAwNAE0ADCY4BQwWOAecBjgE="}'
+                - delay:
+                    milliseconds: 500
+          default:
+            # 閾値未満 → 冬（上向き）に回す
+            - service: mqtt.publish
+              data:
+                topic: zigbee2mqtt/ir_blaster_wsroom/set
+                payload: '{"ir_code_to_send":"CRUN/watAQAFrQHgBwEEWAH5Aa2gAYAJgAVAF8AvQAdAA8ABQAtAA0ABQCcArWABwAfgCQHAK0AH4AMDwAEHAAWtAQAFrQE="}'
+            - delay:
+                milliseconds: 500
+            
+      turn_off:
+        # 照度センサーの取りこぼし防止に少し待機
+        - delay:
+            milliseconds: 500
+            
+        # ライトの元状態を保存
+        - variables:
+            was_on: "{{ is_state('light.wsroom_light_02', 'on') }}"
+
+        # 全消し
+        - service: mqtt.publish
+          data:
+            topic: zigbee2mqtt/ir_blaster_wsroom/set
+            payload: '{"ir_code_to_send":"D20MlAdVAZ0FVQEkAvIAJAJABwAkIAsAJCAD4AMLACQgDwAkYAMAhiAHB50FJAEkAlUBQAdAAwAkIAtAA0ALQAMAJKAPBSQCJAGGAkBXAfIAgAdAEwPyACQCQAcBJAGAKwAkYAfgAwsAJGATCZ0AnQUkASQCJAE="}'
+
+        # 信号の取りこぼし防止に少し待機
+        - delay:
+            milliseconds: 500
+
+        # ライトが元々ONだった場合のみ、再点灯
+        - choose:
+            - conditions:
+                - condition: template
+                  value_template: "{{ was_on }}"
+              sequence:
+                - service: light.turn_on
+                  target:
+                    entity_id: light.wsroom_light_02
+
+# 2F 和室 端 扇風機
+- fan:
+  - name: "jsroom_fan_01"
+    unique_id: jsroom_fan_01
+
+    optimistic: true
+
+    turn_on:
+      - service: mqtt.publish
+        data:
+          topic: zigbee2mqtt/ir_blaster_jsroom_01/set
+          payload: '{"ir_code_to_send":"BWoKagpBA+ADAQG6B+AFA0ABByLXagpqCkED4AMB4AcnA58DQQPgAydAD0AB4AcnA0EDQQM="}'
+          
+    turn_off:
+      - service: mqtt.publish
+        data:
+          topic: zigbee2mqtt/ir_blaster_jsroom_01/set
+          payload: '{"ir_code_to_send":"BWoKagpIA8ABA6wHSANAAUAHQANAAUAHB2PXagpqCkgDwAFAE0ABQAdAA0ABQAfgHCcCB0gD"}'
+
+# 2F 和室 中 扇風機
+- fan:
+  - name: "jsroom_fan_02"
+    unique_id: jsroom_fan_02
+
+    optimistic: true
+
+    turn_on:
+      - service: mqtt.publish
+        data:
+          topic: zigbee2mqtt/ir_blaster_jsroom_02/set
+          payload: '{"ir_code_to_send":"BWoKagpBA+ADAQG6B+AFA0ABByLXagpqCkED4AMB4AcnA58DQQPgAydAD0AB4AcnA0EDQQM="}'
+          
+    turn_off:
+      - service: mqtt.publish
+        data:
+          topic: zigbee2mqtt/ir_blaster_jsroom_02/set
+          payload: '{"ir_code_to_send":"BWoKagpIA8ABA6wHSANAAUAHQANAAUAHB2PXagpqCkgDwAFAE0ABQAdAA0ABQAfgHCcCB0gD"}'
+

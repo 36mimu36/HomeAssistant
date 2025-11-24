@@ -1,0 +1,33 @@
+# 2F 和室 エアコン
+- platform: smartir
+  name: ac_jsroom
+  unique_id: ac_jsroom
+  device_code: 1001
+  controller_data: zigbee2mqtt/ir_blaster_jsroom_01/set
+  temperature_sensor: sensor.meter_21cd
+  humidity_sensor: sensor.meter_21cd_humidity
+  # power_sensor: input_boolean.ac_2f_wsroom
+  # power_sensor_restore_state: false
+
+# 2F 洋室 エアコン
+- platform: smartir
+  name: ac_wsroom
+  unique_id: ac_wsroom
+  device_code: 1001
+  controller_data: zigbee2mqtt/ir_blaster_wsroom/set
+  temperature_sensor: sensor.meter_a13c_temperature
+  humidity_sensor: sensor.meter_a13c_humidity
+  power_sensor: input_boolean.ac_2f_wsroom
+  power_sensor_restore_state: false
+
+
+# 1F 居間 エアコン
+- platform: smartir
+  name: ac_livingroom
+  unique_id: ac_livingroom
+  device_code: 2001
+  controller_data: zigbee2mqtt/ir_blaster_living/set
+  # temperature_sensor: sensor.meter_21cd
+  # humidity_sensor: sensor.meter_21cd_humidity
+  # power_sensor: input_boolean.ac_2f_wsroom
+  # power_sensor_restore_state: false

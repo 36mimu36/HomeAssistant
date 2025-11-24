@@ -1,0 +1,97 @@
+# 2F 和室 端 照明
+- light:
+  - name: "jsroom_light_01"
+    unique_id: jsroom_light_01
+
+    # 照度センサーが10000lx超ならON、それ以外はOFF
+    # Jinja テンプレートで評価された文字列を返す必要がある(true/false ではなく "on"/"off")
+    state: >-
+      {% if states('sensor.1f_jsroom_light_01_illuminance') | int(0) > 10000 %}
+        on
+      {% else %}
+        off
+      {% endif %}
+
+    turn_on:
+      - service: mqtt.publish
+        data:
+          topic: zigbee2mqtt/ir_blaster_jsroom_01/set
+          payload: '{"ir_code_to_send":"B/kNxQb9AWkBgAMB+wSAA0APQAtAB8AD4AMPwAvgBwdAK8ATQAvgBwPAG0AHQAPAH8ALQAfgAwPAHwH//0CnBq0BrQH9Aa0gAcAjQB9ACwCtYAFABwX9AfsErQGAAUALAf0BgAcBrQGAKwOtAa0BQBMBrQGAC+ANAcAbQAcB+wSAL0ABA/sErQFAAUAH4AMDB60BrQGtAa0B"}'
+    turn_off:
+      - service: mqtt.publish
+        data:
+          topic: zigbee2mqtt/ir_blaster_jsroom_01/set
+          payload: '{"ir_code_to_send":"BwQOogYAAmoBgAMB7ASAA0APQAtAB8AD4AMPwAvgBwdAK8ATQAvAA0ATwANAE+ADC0APQAPAE+ADB0AXQAMD//8EDuBDpwCvIO9AZ0Bb4AMDQBPAA0AX4AMLQA9AA8AT4AMHQBdAAwH//+ALpwWvAa8BAALAB0AngA+AB+ADCwXsBK8BrwHAB0ABgAsGAAKvAWoBr+AAAUAnwANAAeADC8ABwBPgAwcHrwGvAa8BrwE="}'
+
+# 2F 和室 中 照明
+- light:
+  - name: "jsroom_light_02"
+    unique_id: jsroom_light_02
+
+    # 照度センサーが10000lx超ならON、それ以外はOFF
+    # Jinja テンプレートで評価された文字列を返す必要がある(true/false ではなく "on"/"off")
+    state: >-
+      {% if states('sensor.1f_jsroom_light_02_illuminance') | int(0) > 10000 %}
+        on
+      {% else %}
+        off
+      {% endif %}
+
+    turn_on:
+      - service: mqtt.publish
+        data:
+          topic: zigbee2mqtt/ir_blaster_jsroom_02/set
+          payload: '{"ir_code_to_send":"ChwOfAYEAl0BBAJ2IAMC2wQEYANAD0ALQAdAA8Ab4AcLwCPAB+AHJ0Av4AMDQCfgAwNAG+ADM0AbwA/AC0AjAf//4B2nQCtAN0AHwEdAC8ATwAfgAxtAC0AjwANAD0An4AMDQBvAF0ALQBvAB0ALQBtADwH//+AVp8AnQCtAN0AHQBPAC+AHB0AfwBNAC0ArQAdAA0ALQBvgAwNAF0ADQBPgBwcL2wQEAnYBBAJ2AQQC"}'
+    turn_off:
+      - service: mqtt.publish
+        data:
+          topic: zigbee2mqtt/ir_blaster_jsroom_02/set
+          payload: '{"ir_code_to_send":"BcEN9gayAcABAScFgANAAUALQAEC4gGyYAHAD0ABwAvgBwdAAcATwAFAP0AT4AsD4AMBwB9AAcALQDtAAQH//+AZp4ABAeIBQDsEsgHiAbIgAYALAbIBgAcB4gGAB4AB4AMLgAGAH0AX4AcD4AMBwBtAAQEnBYAzB7IBsgGyAbIB"}'
+
+# 2F 洋室 照明
+- light:
+    - name: "wsroom_light_01"
+      unique_id: wsroom_light_01
+
+    # 照度センサーが600lx超ならON、それ以外はOFF
+    # Jinja テンプレートで評価された文字列を返す必要がある(true/false ではなく on/off)
+      state: >-
+        {% if states('sensor.1f_wsroom_light_illuminance') | int(0) > 600 %}
+          on
+        {% else %}
+          off
+        {% endif %}
+      turn_on:
+        - action: mqtt.publish
+          data:
+            topic: zigbee2mqtt/ir_blaster_wsroom/set
+            payload: '{"ir_code_to_send":"D/cMEwfnAfUE5wFUAecBqgFAA+ARAYAdAecBQC8AqiABAfUEgAPAAeAFD4Aj4A8BQB1AL0ABwAfAAYCLCaoBqgGqAaoBqgE="}'
+      turn_off:
+        - action: mqtt.publish
+          data:
+            topic: zigbee2mqtt/ir_blaster_wsroom/set
+            payload: '{"ir_code_to_send":"D/cMEwfnAfUE5wFUAecBqgFAA+ARAYAdAecBQC8AqiABAfUEgAPAAeAFD4Aj4A8BQB1AL0ABwAfAAYCLCaoBqgGqAaoBqgE="}'
+
+# 1F 居間 照明
+- light:
+    - name: "livingroom_light_01"
+      unique_id: livingroom_light_01
+
+    # 照度センサーが10000lx超ならON、それ以外はOFF
+    # Jinja テンプレートで評価された文字列を返す必要がある(true/false ではなく on/off)
+      state: >-
+        {% if states('sensor.1f_livingroom_light_illuminance') | int(0) > 10000 %}
+          on
+        {% else %}
+          off
+        {% endif %}
+      turn_on:
+        - action: mqtt.publish
+          data:
+            topic: zigbee2mqtt/ir_blaster_living/set
+            payload: '{"ir_code_to_send":"C/AMegdiAVkFYgEAAuADAwCHIA9AA8AT4AULgC9AB4ADAQACQCcBhwHgBQ+AE4AHQAvgCQMDWQViAUAXwAdAC4AD4AI3AgJiAQ=="}'
+      turn_off:
+        - action: mqtt.publish
+          data:
+            topic: zigbee2mqtt/ir_blaster_living/set
+            payload: '{"ir_code_to_send":"C/AMegdiAVkFYgEAAuADAwCHIA9AA8AT4AULgC9AB4ADAQACQCcBhwHgBQ+AE4AHQAvgCQMDWQViAUAXwAdAC4AD4AI3AgJiAQ=="}'

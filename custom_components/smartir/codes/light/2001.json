@@ -1,0 +1,14 @@
+{
+	"manufacturer": "Custom",
+	"supportedModels": [
+		"ZS06_CIRCULIGHT_DCC-2"
+	],
+	"supportedController": "MQTT",
+	"commandsEncoding": "Raw",
+	"brightness": [],
+	"colorTemperature": [],
+	"commands": {
+		"on": "{\"ir_code_to_send\":\"DjUNBQezAf8EswEpAQgCZuACA0APALMgD4AH4AUBAf8EgBcB/wRACwGzAUABQCdACwP/BAgCQAvASwGzAYABgA8As2ABQB8LswGzAf8EswEpAU0CQAfAAQQpAQgCZiADCykBCAJmAQgCZgGzAQ==\"}",
+		"off": "{\"ir_code_to_send\":\"DFAN5AayAQMFsgF+AbJgAQR+AecBsiABAn4BsmABAX4BwA/gAQfAL0AHQANAAUAfQAtAA0ABQA/gBQOAEwCy4AIBQCsDfgHnAUAHQANAAeADBwcDBbIBsgGyAQ==\"}"
+	}
+}

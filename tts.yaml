@@ -1,0 +1,6 @@
+- platform: google_translate
+  service_name: google_say
+  cache: true  # キャッシュ有効化
+  cache_dir: /config/tts  # キャッシュ保存ディレクトリ
+  time_memory: 300  # キャッシュ保持期間（秒）
+  language: "ja"  # 言語（日本語の場合は "ja"）

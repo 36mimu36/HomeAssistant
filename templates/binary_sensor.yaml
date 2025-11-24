@@ -1,0 +1,91 @@
+# 1F 居間 TVの電源状態
+# 測定値: オン時約80W / クリーンセーブ時約45W / オフ時約25W
+- binary_sensor:
+  - name: "TV 1F Livingroom Power"
+    unique_id: tv_1f_livingroom_power
+    device_class: power
+    # オフに落とすときだけ10秒待つ
+    delay_off: "00:00:10"
+    # センサーが落ちているときはこのバイナリも無効化
+    availability: >-
+      {{ states('sensor.plug_mini_jp_0122_power') not in ['unknown','unavailable','none'] }}
+
+    # ヒステリシス：50W以上→on、30W以下→off、その間は前回状態を保持
+    state: >-
+      {% set p = states('sensor.plug_mini_jp_0122_power') | float(0) %}
+      {% if p >= 50 %}
+        true
+      {% elif p <= 30 %}
+        false
+      {% else %}
+        {{ is_state('binary_sensor.tv_1f_livingroom_power', 'on') }}
+      {% endif %}
+
+    # お好みでアイコン
+    icon: >-
+      {% if is_state('binary_sensor.tv_1f_livingroom_power','on') %}
+        mdi:television
+      {% else %}
+        mdi:television-off
+      {% endif %}
+
+
+# 1F 居間 TVの電源状態
+# 測定値：オン時約80W／スクリーンセーブ時約45W／オフ時約25W
+- binary_sensor:
+  - name: "TV 1F Bedroom Power"
+    unique_id: tv_1f_bedroom_power
+    device_class: power
+    # オフに落とすときだけ10秒待つ
+    delay_off: "00:00:10"
+    # センサーが落ちているときはこのバイナリも無効化
+    availability: >-
+      {{ states('sensor.plug_mini_jp_b276_power') not in ['unknown','unavailable','none'] }}
+
+    # ヒステリシス：40W以上→on、20W以下→off、それ以外は前回状態維持
+    state: >-
+      {% set p = states('sensor.plug_mini_jp_b276_power') | float(0) %}
+      {% if p >= 40 %}
+        true
+      {% elif p <= 20 %}
+        false
+      {% else %}
+        {{ is_state('binary_sensor.tv_1f_bedroom_power', 'on') }}
+      {% endif %}
+
+    icon: >-
+      {% if is_state('binary_sensor.tv_1f_bedroom_power','on') %}
+        mdi:television
+      {% else %}
+        mdi:television-off
+      {% endif %}
+
+
+# 2F 和室 TVの電源状態
+# 測定値：オン時約80W／スクリーンセーブ時約45W／オフ時約25W
+- binary_sensor:
+  - name: "TV 2F Japanese Room Power"
+    unique_id: tv_2f_jsroom_power
+    device_class: power
+    # オフ判定は10秒待機
+    delay_off: "00:00:10"
+    availability: >-
+      {{ states('sensor.plug_mini_jp_cd12_power') not in ['unknown','unavailable','none'] }}
+
+    # ヒステリシス：30W以上→on、20W以下→off、それ以外は前回状態維持
+    state: >-
+      {% set p = states('sensor.plug_mini_jp_cd12_power') | float(0) %}
+      {% if p >= 30 %}
+        true
+      {% elif p <= 20 %}
+        false
+      {% else %}
+        {{ is_state('binary_sensor.tv_2f_jsroom_power', 'on') }}
+      {% endif %}
+
+    icon: >-
+      {% if is_state('binary_sensor.tv_2f_jsroom_power','on') %}
+        mdi:television
+      {% else %}
+        mdi:television-off
+      {% endif %}

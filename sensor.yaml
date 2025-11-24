@@ -1,0 +1,115 @@
+# EspPresence
+# One entry for each beacon you want to track
+- platform: mqtt_room
+  device_id: "phone:masato"
+  name: 'EspPresence phone:masato'
+  state_topic: 'espresense/devices/phone:masato'
+  timeout: 10
+  away_timeout: 120
+
+- platform: mqtt_room
+  device_id: "phone:hiromi"
+  name: 'EspPresence phone:hiromi'
+  state_topic: 'espresense/devices/phone:hiromi'
+  timeout: 10
+  away_timeout: 120
+
+- platform: mqtt_room
+  device_id: "phone:kakumi"
+  name: 'EspPresence phone:kakumi'
+  state_topic: 'espresense/devices/phone:kakumi'
+  timeout: 10
+  away_timeout: 120
+
+#瞬間電力
+- platform: rest
+  name: "Smart Meter Instantaneous Power"
+  resource: "https://api.nature.global/1/appliances"
+  headers:
+    Authorization: "Bearer Avx3SNxYPgmHifqqBdXUR9eZV3-iZNJkFGWK5tZ5E94.uy8kuHRUGZrrNh0fRtc7WkPyO4SRtQ9pjbn1WM3PLJc"
+  value_template: >
+    {%- set meter = value_json | selectattr("type", "equalto", "EL_SMART_METER") | list | first -%}
+    {%- if meter is not none and meter.smart_meter is defined -%}
+      {%- set instantaneous = meter.smart_meter.echonetlite_properties | selectattr("epc", "equalto", 231) | list | first -%}
+      {{ instantaneous.val }}
+    {%- else -%}
+      0
+    {%- endif -%}
+  unit_of_measurement: "W"
+  scan_interval: 60
+
+#積算電力
+- platform: rest
+  name: "Smart Meter Cumulative Energy"
+  resource: "https://api.nature.global/1/appliances"
+  headers:
+    Authorization: "Bearer Avx3SNxYPgmHifqqBdXUR9eZV3-iZNJkFGWK5tZ5E94.uy8kuHRUGZrrNh0fRtc7WkPyO4SRtQ9pjbn1WM3PLJc"
+  value_template: >
+    {%- set meter = value_json | selectattr("type", "equalto", "EL_SMART_METER") | list | first -%}
+    {%- if meter is not none and meter.smart_meter is defined -%}
+      {%- set raw = meter.smart_meter.echonetlite_properties 
+        | selectattr("epc", "equalto", 224) | list | first -%}
+      {%- set coeff = meter.smart_meter.echonetlite_properties 
+        | selectattr("epc", "equalto", 211) | list | first -%}
+      {%- set unit = meter.smart_meter.echonetlite_properties 
+        | selectattr("epc", "equalto", 225) | list | first -%}
+      {%- set conversion = 1 -%}
+      {%- if unit.val == "0" -%}
+        {%- set conversion = 1 -%}
+      {%- elif unit.val == "1" -%}
+        {%- set conversion = 0.1 -%}
+      {%- elif unit.val == "2" -%}
+        {%- set conversion = 0.01 -%}
+      {%- elif unit.val == "3" -%}
+        {%- set conversion = 0.001 -%}
+      {%- elif unit.val == "4" -%}
+        {%- set conversion = 0.0001 -%}
+      {%- elif unit.val == "10" -%}
+        {%- set conversion = 10 -%}
+      {%- elif unit.val == "11" -%}
+        {%- set conversion = 100 -%}
+      {%- elif unit.val == "12" -%}
+        {%- set conversion = 1000 -%}
+      {%- elif unit.val == "13" -%}
+        {%- set conversion = 10000 -%}
+      {%- endif -%}
+      {{ (raw.val | float * coeff.val | float * conversion) | round(1) }}
+    {%- else -%}
+      0
+    {%- endif -%}
+  unit_of_measurement: "kWh"
+  scan_interval: 60
+
+#電力値から料金を計算
+- platform: template
+  sensors:
+    daily_daytime_cost:
+      friendly_name: "Today's Daytime Electricity Cost"
+      unit_of_measurement: "¥"
+      value_template: "{{ (states('sensor.daily_energy_day') | float(0) * 40) | round(0) }}"
+    daily_nighttime_cost:
+      friendly_name: "Today's Nighttime Electricity Cost"
+      unit_of_measurement: "¥"
+      value_template: "{{ (states('sensor.daily_energy_night') | float(0) * 28.85) | round(0) }}"
+    monthly_daytime_cost:
+      friendly_name: "This Month's Daytime Electricity Cost"
+      unit_of_measurement: "¥"
+      value_template: "{{ (states('sensor.monthly_energy_day') | float(0) * 40) | round(0) }}"
+    monthly_nighttime_cost:
+      friendly_name: "This Month's Nighttime Electricity Cost"
+      unit_of_measurement: "¥"
+      value_template: "{{ (states('sensor.monthly_energy_night') | float(0) * 28.85) | round(0) }}"
+    monthly_total_cost:
+      friendly_name: "This Month's Total Electricity Cost"
+      unit_of_measurement: "¥"
+      value_template: >
+        {% set daytime   = states('sensor.monthly_energy_day')   | float(0) %}
+        {% set nighttime = states('sensor.monthly_energy_night') | float(0) %}
+        {{ (daytime * 40 + nighttime * 28.85) | round(2) }}
+
+
+
+- platform: folder
+  folder: /config/www/snapshots
+  filter: "*.jpg"
+

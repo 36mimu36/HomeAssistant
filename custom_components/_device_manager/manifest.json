@@ -1,0 +1,10 @@
+{
+  "domain": "device_manager",
+  "name": "Device Manager",
+  "version": "1.0.0",
+  "documentation": "https://github.com/your_github_username/device_manager",
+  "requirements": [],
+  "dependencies": [],
+  "codeowners": ["@your_github_username"],
+  "config_flow": true
+}

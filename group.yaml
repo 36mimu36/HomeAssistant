@@ -1,0 +1,16 @@
+google_home_devices_all:
+  name: Google Home Group
+  entities:
+    - media_player.yi_jie_ju_jian_1 #一階居間1
+    - media_player.googlehome3856 #一階居間2
+    - media_player.er_jie_he_shi_1 #二階和室1
+    - media_player.er_jie_he_shi_2 #二階和室2
+    - media_player.er_jie_yang_shi #二階洋室
+    - media_player.nesthubc997 #一階寝室
+
+family_presence:
+  name: Esppresence Group
+  entities: #家族のスマートフォンの一覧
+    - sensor.esppresence_phone_masato #雅人のスマートフォン
+    - sensor.esppresence_phone_hiromi #皓美のスマートフォン
+    - sensor.esppresence_phone_kakumi #覚美のスマートフォン

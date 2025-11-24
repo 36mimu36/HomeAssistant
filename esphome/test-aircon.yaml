@@ -1,0 +1,54 @@
+esphome:
+  name: test-aircon
+  friendly_name: test_aircon
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "hEc9BYKu7U5JJIg9mUhr76uTBPE1hKpARqZWjBpSeJk="
+
+ota:
+  - platform: esphome
+    password: "9f9db7b6c6348926ff3d61051e84d80c"
+
+wifi:
+  ssid: !secret wifi_ssid_1sthome-1f-1st
+  password: !secret wifi_password_1sthome-1f-1st
+
+  ap:
+    ssid: "Test-Aircon Fallback Hotspot"
+    password: "GPFB4b9VGnKQ"
+
+captive_portal:
+
+sensor:
+  - platform: adc
+    pin: GPIO32
+    id: adc_sensor
+    attenuation: 11db # ここが重要。3.3Vまで測定するには、これを設定する必要がある。
+    update_interval: 3000ms
+
+  - platform: ct_clamp
+    sensor: adc_sensor
+    name: "AC Current"
+    id: current
+    update_interval: 3000ms
+    sample_duration: 600ms
+    filters:
+      - calibrate_linear:
+        - 0.002 -> 0.00
+        - 0.137 -> 3.32 # LOGから、'AC Current' - Raw AC Value: 0.137A、クランプメーターの交流電流(~A)から、3.32Aを読み取り、記入していく。
+        - 0.152 -> 3.76 # ポイントは多ければ多いほど正確になる。
+        - 0.180 -> 4.45
+
+# 参考
+# https://esphome.io/components/sensor/ct_clamp.html
+# https://sympapa.hatenablog.com/entry/2024/04/29/182242

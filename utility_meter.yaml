@@ -1,0 +1,17 @@
+#積算電力(日)
+daily_energy:
+  source: sensor.smart_meter_cumulative_energy
+  name: Daily Energy
+  cycle: daily
+  tariffs:
+    - day
+    - night
+
+#積算電力(月)
+monthly_energy:
+  source: sensor.smart_meter_cumulative_energy
+  name: Monthly Energy
+  cycle: monthly
+  tariffs:
+    - day
+    - night

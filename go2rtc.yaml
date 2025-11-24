@@ -1,0 +1,25 @@
+
+# Web UI
+# go2rtc自体の設定や状態に、人間や外部システムがアクセスする窓口
+api:
+  listen: "127.0.0.1:1984"  # localhost のみに限定
+
+# WebRTC
+# go2rtcが取得した映像を、配信者として提供する
+webrtc:
+  listen: "127.0.0.1:8555"  # localhost のみに限定
+
+
+# go2rtcがReolinkから映像を受信者として取得する
+streams:
+  # 車道
+  reolink_main01:
+    - rtsp://admin:f6MVcpQi@192.168.1.123:554/h264Preview_01_main
+  reolink_sub01:
+    - rtsp://admin:f6MVcpQi@192.168.1.123:554/h264Preview_01_sub
+  
+  # 工場前
+  reolink_main02:
+    - rtsp://admin:f6MVcpQi@192.168.1.124:554/h264Preview_01_main
+  reolink_sub02:
+    - rtsp://admin:f6MVcpQi@192.168.1.124:554/h264Preview_01_sub

@@ -1,0 +1,34 @@
+# 台所のドアの鍵
+# 鍵の状態: binary_sensor.lock_kitchen_contact → off(閉) / on(開)
+# ドアの状態: binary_sensor.contact_sensor_9b43_2 → off(閉) / on(開)
+- lock:
+  - name: "Kitchen_door"
+    unique_id: kitchen_door_lock_template
+    state: >-
+      {%- set lock_closed = is_state('binary_sensor.lock_kitchen_contact', 'off') -%}
+      {%- set door_closed = is_state('binary_sensor.contact_sensor_9b43_2', 'off') -%}
+      {%- if lock_closed and door_closed -%}
+        locked
+      {%- elif not lock_closed and door_closed -%}
+        unlocked
+      {%- else -%}
+        open
+      {%- endif %}
+    icon: >-
+      {%- set lock_closed = is_state('binary_sensor.lock_kitchen_contact', 'off') -%}
+      {%- set door_closed = is_state('binary_sensor.contact_sensor_9b43_2', 'off') -%}
+      {%- if lock_closed and door_closed -%}
+        mdi:lock
+      {%- elif not lock_closed and door_closed -%}
+        mdi:lock-open-variant
+      {%- else -%}
+        mdi:door-open
+      {%- endif %}
+    lock:
+      - service: lock.lock
+        target:
+          entity_id: lock.lock_9dd7
+    unlock: 
+      - service: lock.unlock
+        target:
+          entity_id: lock.lock_9dd7

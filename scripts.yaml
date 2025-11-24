@@ -1,0 +1,117 @@
+unknown_3:
+  alias: 水遣り
+  description: ''
+  sequence:
+  - action: switch.turn_on
+    metadata: {}
+    data: {}
+    target:
+      entity_id: switch.plug_mini_jp_5ea2
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 10
+      milliseconds: 0
+  - action: switch.turn_on
+    metadata: {}
+    data: {}
+    target:
+      entity_id: switch.test_garden_relay_gpio22
+  - delay:
+      hours: 0
+      minutes: 1
+      seconds: 0
+      milliseconds: 0
+  - action: switch.turn_off
+    metadata: {}
+    data: {}
+    target:
+      entity_id: switch.test_garden_relay_gpio22
+  - action: switch.turn_on
+    metadata: {}
+    data: {}
+    target:
+      entity_id: switch.test_garden_relay_gpio19
+  - delay:
+      hours: 0
+      minutes: 1
+      seconds: 0
+      milliseconds: 0
+  - action: switch.turn_off
+    metadata: {}
+    data: {}
+    target:
+      entity_id: switch.test_garden_relay_gpio19
+  - action: switch.turn_on
+    metadata: {}
+    data: {}
+    target:
+      entity_id: switch.test_garden_relay_gpio18
+  - delay:
+      hours: 0
+      minutes: 5
+      seconds: 0
+      milliseconds: 0
+  - action: switch.turn_off
+    metadata: {}
+    data: {}
+    target:
+      entity_id: switch.test_garden_relay_gpio18
+  - action: switch.turn_off
+    metadata: {}
+    data: {}
+    target:
+      entity_id: switch.plug_mini_jp_5ea2
+  - action: notify.mobile_app_iphone_12mini_a2398
+    metadata: {}
+    data:
+      message: 元栓を閉めてください。
+      title: '[✅完了]'
+unknown_6:
+  sequence:
+  - variables:
+      _max: '{{ (max | default(5)) | int }}'
+      _prefix: '{{ prefix_entities | default(''input_text.notification_log_'') }}'
+      _ts: '{{ now().strftime(''%Y-%m-%d %H:%M'') }}'
+      _line: '{{ _ts }} | {{ (message | default('''')) | trim }} | {{ (url | default(''''))
+        | trim }} | {{ (kind | default('''')) | trim }} | {{ (level | default(''''))
+        | trim }}
+
+        '
+  - repeat:
+      count: '{{ _max - 1 }}'
+      sequence:
+      - variables:
+          dst: '{{ _max - (repeat.index - 1) }}'
+          src: '{{ (_max - (repeat.index - 1)) - 1 }}'
+      - data:
+          entity_id: '{{ _prefix ~ dst }}'
+          value: '{{ states(_prefix ~ src) }}'
+        action: input_text.set_value
+  - data:
+      entity_id: '{{ _prefix ~ ''1'' }}'
+      value: '{{ _line | trim }}'
+    action: input_text.set_value
+auto_off_snooze_2:
+  alias: auto_off_snooze
+  description: ''
+  sequence:
+  - alias: オートメーションをオフ
+    action: automation.turn_off
+    metadata: {}
+    data:
+      stop_actions: true
+    target:
+      entity_id: automation.tesuto_zi_dong_qian_yi
+  - alias: タイマーのキャンセル・スタート
+    sequence:
+    - action: timer.cancel
+      metadata: {}
+      data: {}
+      target:
+        entity_id: timer.auto_off_snooze
+    - action: timer.start
+      metadata: {}
+      data: {}
+      target:
+        entity_id: timer.auto_off_snooze

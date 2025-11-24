@@ -1,0 +1,19 @@
+datsuijo_plug_off:
+  duration: "00:10:00"
+datsuijo_plug_max:
+  duration: "01:00:00"
+
+basement_plug_off:
+  duration: "00:10:00"
+basement_plug_max:
+  duration: "01:00:00"
+
+factory1stno1_plug_off:
+  duration: "00:10:00"
+factory1stno1_plug_max:
+  duration: "01:00:00"
+
+factory2nd_plug_off:
+  duration: "00:10:00"
+factory2nd_plug_max:
+  duration: "01:00:00"

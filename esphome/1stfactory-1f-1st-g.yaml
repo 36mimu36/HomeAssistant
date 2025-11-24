@@ -1,0 +1,40 @@
+esphome:
+  name: 1stfactory-1f-1st-g
+  friendly_name: 1stFactory-1F-1st-G
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "DU+Zok1rsY7uA5adX7Bx+Lt1qZL2UZjInHetvTGwMRI="
+
+ota:
+  - platform: esphome
+    password: "8d0672d480e5d6314f6319e0ab223497"
+
+wifi:
+  ssid: !secret wifi_ssid_1stfactory-1f-1st
+  password: !secret wifi_password_1stfactory-1f-1st
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "1Stfactory-1F-1St-G"
+    password: "dVpqnUefHEUy"
+
+esp32_ble_tracker:
+  scan_parameters:
+    interval: 1100ms
+    window: 1100ms
+    active: true
+
+bluetooth_proxy:
+  active: true
+
+captive_portal:

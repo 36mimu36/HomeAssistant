@@ -1,0 +1,17 @@
+# 天気・温湿度
+# 現在の天気: weather.forecast_zi_zhai
+# 外の温度計: sensor.indoor_outdoor_meter_655c
+# 外の湿度計: sensor.indoor_outdoor_meter_655c_humidity
+- triggers:
+    - trigger: state
+      entity_id:
+        - weather.forecast_zi_zhai
+        - sensor.indoor_outdoor_meter_655c
+        - sensor.indoor_outdoor_meter_655c_humidity
+  weather:
+    - name: "Weather"
+      unique_id: my_weather_station_template
+      condition_template: "{{ states('weather.forecast_zi_zhai') }}"
+      temperature_template: "{{ states('sensor.indoor_outdoor_meter_655c') | float }}"
+      temperature_unit: "°C"
+      humidity_template: "{{ states('sensor.indoor_outdoor_meter_655c_humidity') | float }}"

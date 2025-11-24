@@ -1,0 +1,65 @@
+- platform: template
+  sensors:
+  
+    #家全体
+    #センサーの状態が10分以上継続している場合にのみ状態が切り替わるようにした
+    family_home_sensor:
+      friendly_name: "Family Home Sensor"
+      value_template: >
+        {% set states_list = expand('group.family_presence') | map(attribute='state') | list %}
+        {{ "on" if (states_list | select("ne", "not_home") | list | length) > 0 else "off" }}
+      delay_on: "00:10:00"
+      delay_off: "00:10:00"
+      icon_template: >
+        {% if is_state('binary_sensor.family_home_sensor', 'on') %}
+          mdi:home
+        {% else %}
+          mdi:home-outline
+        {% endif %}
+        
+    #1階居間
+    #センサーの状態が10分以上継続している場合にのみ状態が切り替わるようにした
+    family_room_sensor_1f_livingroom:
+      friendly_name: "Family Room Sensor 1f Livingroom"
+      value_template: >
+        {% set states_list = expand('group.family_presence') | map(attribute='state') | list %}
+        {{ "on" if "1f_livingroom" in states_list else "off" }}
+      delay_on: "00:10:00"
+      delay_off: "00:10:00"
+      icon_template: >
+        {% if is_state('binary_sensor.family_room_sensor_1f_livingroom', 'on') %}
+          mdi:sofa
+        {% else %}
+          mdi:sofa-outline
+        {% endif %}
+      
+    #2階和室
+    #センサーの状態が10分以上継続している場合にのみ状態が切り替わるようにした
+    family_room_sensor_2f_japaneseroom:
+      friendly_name: "Family Room Sensor 2f Japaneseroom"
+      value_template: >
+        {% set states_list = expand('group.family_presence') | map(attribute='state') | list %}
+        {{ "on" if "2f_jsroom" in states_list else "off" }}
+      delay_on: "00:10:00"
+      delay_off: "00:10:00"
+      icon_template: >
+        {% if is_state('binary_sensor.family_room_sensor_2f_japaneseroom', 'on') %}
+          mdi:bed-double
+        {% else %}
+          mdi:bed-double-outline
+        {% endif %}
+        
+    #1階寝室 父のみ
+    family_room_sensor_1f_bedroom_kakumi:
+      friendly_name: "Family Room Sensor 1f BedRoom Kakumi"
+      value_template: >
+        {{ "on" if is_state('sensor.esppresence_phone_kakumi', '1f_bedroom') else "off" }}
+      delay_on: "00:10:00"
+      delay_off: "00:10:00"
+      icon_template: >
+        {% if is_state('binary_sensor.family_room_sensor_1f_bedroom_kakumi', 'on') %}
+          mdi:bed
+        {% else %}
+          mdi:bed-outline
+        {% endif %}
+

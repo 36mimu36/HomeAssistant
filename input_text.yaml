@@ -1,0 +1,9 @@
+
+notification_message:
+    name: Notification Message
+    initial: "通知内容を入力"
+    max: 255
+
+hihi_last_trigger:
+    name: ハイハイ検知元
+    max: 20

@@ -1,0 +1,2339 @@
+- id: '1737878004110'
+  alias: 冷蔵庫 開放アラーム（繰り返し）
+  description: '冷蔵庫の扉が3分以上開いている場合に警告を開始。 対象は大・小冷蔵庫の上下段すべてのドアセンサー。
+
+    ● 動作仕様 - トリガー：扉が3分以上連続で開いたとき - 動作：音声＋スマホ通知を送信 - 閉じるまで1分間隔で通知を繰り返す（無限ループ） - 扉を閉じると直ちにループ停止
+    - 再度3分開いた場合は新しいループを開始（mode: restart）
+
+    ● 目的 扉の閉め忘れによる冷気漏れを防止し、食品の劣化を防ぐ
+
+    '
+  triggers:
+  - entity_id:
+    - binary_sensor.fridge1_top_contact
+    - binary_sensor.fridge1_middle_contact
+    - binary_sensor.fridge1_bottom_contact
+    - binary_sensor.fridge2_top_contact
+    - binary_sensor.fridge2_middle_contact
+    - binary_sensor.fridge2_bottom_contact
+    to: 'on'
+    for:
+      hours: 0
+      minutes: 3
+      seconds: 0
+    trigger: state
+  actions:
+  - variables:
+      sensor_entity: '{{ trigger.entity_id }}'
+      sensor_name: "{% set names = {\n  'binary_sensor.fridge1_top_contact': '大きい冷蔵庫の上段の扉',\n
+        \ 'binary_sensor.fridge1_middle_contact': '大きい冷蔵庫の中段の扉',\n  'binary_sensor.fridge1_bottom_contact':
+        '大きい冷蔵庫の下段の扉',\n  'binary_sensor.fridge2_top_contact': '小さい冷蔵庫の上段の扉',\n  'binary_sensor.fridge2_middle_contact':
+        '小さい冷蔵庫の中段の扉',\n  'binary_sensor.fridge2_bottom_contact': '小さい冷蔵庫の下段の扉'\n}
+        %} {{ names.get(trigger.entity_id, '不明') }}\n"
+  - repeat:
+      while:
+      - condition: template
+        value_template: '{{ is_state(sensor_entity, ''on'') }}'
+      sequence:
+      - event: play_video
+        event_data:
+          text: '{{ sensor_name }}が
+
+            開いているかもしれません。
+
+
+            確認をお願いします。'
+          cast_entity: group.google_home_devices_all
+          mode: default
+      - data:
+          title: '[通知]'
+          message: '{{ sensor_name }}が、開いているかもしれません。'
+        action: notify.mobile_app_iphone_12mini_a2398
+      - delay:
+          hours: 0
+          minutes: 3
+          seconds: 0
+          milliseconds: 0
+  mode: restart
+- id: '1737936056231'
+  alias: ストーブ_ONOFF
+  description: '温湿度計のセンサー値が14度未満になった場合にストーブをオンにし、センサー値の変化に応じて安全にオフ操作を実行するオートメーション。
+
+
+    ● 安全機能:
+
+    - 温度が16度以上になったら自動停止
+
+    - 最大稼働時間4時間（過熱防止）
+
+    - センサー異常検知（unavailableまたはunknown）
+
+    - 5分ごとに安全条件をチェック
+
+    - 手動停止の検知
+
+
+    ● 動作フロー:
+
+    1. ストーブのプラグをON
+
+    2. 2分後に着火確認（電力5W未満ならボタンで点火）
+
+    3. 5分ごとに安全チェック（最大48回 = 4時間）
+
+    4. 安全条件を満たさなくなったら即座に停止
+
+    5. 4時間経過後は自動停止
+
+    '
+  triggers:
+  - entity_id: sensor.meter_f094
+    below: 14
+    trigger: numeric_state
+  conditions:
+  - condition: state
+    entity_id: switch.plug_mini_jp_41de
+    state:
+    - 'off'
+  - condition: template
+    value_template: '{{ states(''sensor.meter_f094'') not in [''unavailable'', ''unknown'']
+      }}'
+  actions:
+  - target:
+      entity_id: switch.plug_mini_jp_41de
+    action: switch.turn_on
+    data: {}
+  - data:
+      message: "\U0001F525 ストーブのプラグをオンにしました。（{{ now().strftime('%H:%M:%S') }}）\n室温:
+        {{ states('sensor.meter_f094') }}℃"
+    action: notify.mobile_app_iphone_12mini_a2398
+  - alias: 着火確認（2分後）
+    sequence:
+    - delay:
+        minutes: 2
+    - target:
+        entity_id: sensor.plug_mini_jp_41de_power_power
+      action: homeassistant.update_entity
+    - delay:
+        seconds: 3
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: '{{ states(''sensor.plug_mini_jp_41de_power_power'') not
+            in [''unavailable'', ''unknown''] }}'
+        - condition: template
+          value_template: '{{ states(''sensor.plug_mini_jp_41de_power'') | float(0)
+            < 5 }}'
+        sequence:
+        - data:
+            message: ⚠️ ストーブの着火を確認できません（{{ states('sensor.plug_mini_jp_e45e_power')
+              }}W）。ボタンで点火を試みます。
+          action: notify.mobile_app_iphone_12mini_a2398
+        - target:
+            entity_id: switch.bot_354b
+          action: switch.turn_on
+          data: {}
+        - delay:
+            seconds: 3
+      default:
+      - data:
+          message: ✅ ストーブの着火を確認しました（{{ states('sensor.plug_mini_jp_e45e_power') }}W）
+        action: notify.mobile_app_iphone_12mini_a2398
+  - alias: 5分ごとの安全監視ループ（最大1時間）
+    repeat:
+      count: 12
+      sequence:
+      - delay:
+          minutes: 5
+      - alias: 安全条件チェック
+        choose:
+        - conditions:
+          - condition: numeric_state
+            entity_id: sensor.meter_f094
+            above: 16
+          sequence:
+          - data:
+              message: '✅ [自動停止] 室温が16℃以上になったためストーブを停止します。（{{ now().strftime(''%H:%M:%S'')
+                }}）
+
+                現在温度: {{ states(''sensor.meter_f094'') }}℃'
+            action: notify.mobile_app_iphone_12mini_a2398
+          - target:
+              entity_id: switch.plug_mini_jp_41de
+            action: switch.turn_off
+          - stop: 目標温度に到達したため停止
+        - conditions:
+          - condition: template
+            value_template: '{{ states(''sensor.meter_f094'') in [''unavailable'',
+              ''unknown''] }}'
+          sequence:
+          - data:
+              message: ⚠️ [安全停止] 温度センサーが異常です。安全のためストーブを停止します。（{{ now().strftime('%H:%M:%S')
+                }}）
+            action: notify.mobile_app_iphone_12mini_a2398
+          - target:
+              entity_id: switch.plug_mini_jp_41de
+            action: switch.turn_off
+          - stop: センサー異常のため停止
+        - conditions:
+          - condition: state
+            entity_id: switch.plug_mini_jp_41de
+            state: 'off'
+          sequence:
+          - data:
+              message: ℹ️ ストーブのプラグが手動でオフにされました。監視を終了します。（{{ now().strftime('%H:%M:%S')
+                }}）
+            action: notify.mobile_app_iphone_12mini_a2398
+          - stop: 手動停止を検知
+  - alias: 最大稼働時間到達後の自動停止
+    sequence:
+    - data:
+        message: '⏰ [タイムアウト] 最大稼働時間（4時間）に到達したためストーブを停止します。（{{ now().strftime(''%H:%M:%S'')
+          }}）
+
+          現在温度: {{ states(''sensor.meter_f094'') }}℃'
+      action: notify.mobile_app_iphone_12mini_a2398
+    - delay:
+        seconds: 2
+    - target:
+        entity_id: switch.plug_mini_jp_41de
+      action: switch.turn_off
+  mode: restart
+- id: '1738129881775'
+  alias: 全体にアナウンス
+  triggers:
+  - entity_id: input_text.notification_message
+    trigger: state
+  conditions: []
+  actions:
+  - event: play_video
+    event_data:
+      text: '{{ states(''input_text.notification_message'') }}'
+      cast_entity: group.google_home_devices_all
+      mode: default
+  mode: single
+- id: '1738807680775'
+  alias: 台所_OFF_人感
+  description: 5分ごとに人感センサーを評価してキッチン照明の消し忘れを防止
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.mmwave_kitchen_1f_presence
+    to: 'off'
+    for:
+      hours: 0
+      minutes: 5
+      seconds: 0
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: time
+        after: '17:00:00'
+        before: '23:00:00'
+      sequence:
+      - response_variable: rest_response
+        action: rest_command.1f_kitchen_lighting_dim_mode
+        data: {}
+      - condition: template
+        value_template: '{{ rest_response.status_code == 200 }}'
+      - data:
+          message: "\U0001F319 夜のアクション実行: キッチン照明を暗くしました"
+        action: notify.mobile_app_iphone_12mini_a2398
+        enabled: false
+      - condition: template
+        value_template: '{{ rest_response.status_code != 200 }}'
+      - data:
+          message: '⚠️ RESTエラー: キッチン照明の調光コマンドが失敗しました（コード: {{ rest_response.status_code
+            }}）'
+        action: notify.mobile_app_iphone_12mini_a2398
+        enabled: false
+    default:
+    - response_variable: rest_response
+      action: rest_command.1f_kitchen_lighting_off
+      data: {}
+    - condition: template
+      value_template: '{{ rest_response.status_code == 200 }}'
+    - data:
+        message: "\U0001F31E 昼のアクション実行: キッチン照明をオフにしました"
+      action: notify.mobile_app_iphone_12mini_a2398
+      enabled: false
+    - condition: template
+      value_template: '{{ rest_response.status_code != 200 }}'
+    - data:
+        message: '⚠️ RESTエラー: キッチン照明のオフコマンドが失敗しました（コード: {{ rest_response.status_code
+          }}）'
+      action: notify.mobile_app_iphone_12mini_a2398
+      enabled: false
+  - condition: template
+    value_template: '{{ rest_response.status_code == 200 }}'
+    enabled: false
+  - data:
+      message: "✅ キッチンオートメーション完了: - 最終の人感センサー検知から30分経過 - 実行アクション: {{\n    \"照明オフ\"
+        if now().hour >= 23 or now().hour < 17 else \"照明を暗く\"\n  }} に変更\n"
+    action: notify.mobile_app_iphone_12mini_a2398
+    enabled: false
+  - alias: ダッシュボード OFF
+    action: mqtt.publish
+    data:
+      evaluate_payload: false
+      qos: 0
+      retain: false
+      topic: rpi/window/cmd
+      payload: screen_off
+  mode: restart
+- id: '1739182099823'
+  alias: 電力_切り替え(昼/夜)_7/23
+  description: ''
+  triggers:
+  - trigger: time
+    at: 07:00:00
+    variables:
+      tariff: day
+  - trigger: time
+    at: '23:00:00'
+    variables:
+      tariff: night
+  conditions: []
+  actions:
+  - action: select.select_option
+    target:
+      entity_id: select.daily_energy
+    data:
+      option: '{{ tariff }}'
+  - action: select.select_option
+    target:
+      entity_id: select.monthly_energy
+    data:
+      option: '{{ tariff }}'
+  mode: single
+- id: '1739334694464'
+  alias: 台所_ON_人感or開閉
+  description: 人感センサーまたは開閉センサーでキッチン照明をON
+  triggers:
+  - entity_id: sensor.mmwave_kitchen_1f_presence_event
+    to:
+    - enter
+    - approach
+    id: motion_sensor
+    trigger: state
+  - entity_id: binary_sensor.contact_sensor_9b43_2
+    to: 'on'
+    id: contact_sensor
+    trigger: state
+  actions:
+  - response_variable: rest_response
+    action: rest_command.1f_kitchen_lighting_on
+    data: {}
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ rest_response.status == 200 }}'
+      sequence:
+      - data:
+          message: '✅ キッチン照明を点灯しました （トリガー: {{ ''人感センサー'' if trigger.id==''motion_sensor''
+            else ''開閉センサー'' }}）'
+        action: notify.mobile_app_iphone_12mini_a2398
+        enabled: false
+    - conditions:
+      - condition: template
+        value_template: '{{ rest_response.status != 200 }}'
+      sequence:
+      - data:
+          message: '⚠️ キッチン照明ONのリクエストが失敗しました （コード: {{ rest_response.status }} | トリガー:
+            {{ ''人感センサー'' if trigger.id==''motion_sensor'' else ''開閉センサー'' }}）'
+        action: notify.mobile_app_iphone_12mini_a2398
+        enabled: false
+  - alias: ダッシュボード ON
+    action: mqtt.publish
+    data:
+      evaluate_payload: false
+      qos: 0
+      retain: false
+      topic: rpi/window/cmd
+      payload: screen_on
+  mode: single
+- id: '1739346193451'
+  alias: トイレヒーター_ON/OFF_自動制御_5min
+  description: 夜間（21:00～07:00）は、室温が14℃未満ならヒーターをON、15℃以上ならOFFにします。 日中は常にOFFにすることで、リモコンなどで手動ONされた場合も自動でOFFされるよう制御しています。
+  triggers:
+  - minutes: /5
+    trigger: time_pattern
+  actions:
+  - choose:
+    - conditions:
+      - condition: time
+        after: '21:00:00'
+        before: 07:00:00
+      - condition: numeric_state
+        entity_id: sensor.meter_e975
+        below: 14
+      sequence:
+      - action: rest_command.1f_toilet_heater_on
+        data: {}
+      - data:
+          message: "\U0001F525 トイレヒーターON: 室温 {{ states('sensor.meter_e975') }}℃"
+        action: notify.mobile_app_iphone_12mini_a2398
+        enabled: false
+    - conditions:
+      - condition: time
+        after: '21:00:00'
+        before: 07:00:00
+      - condition: numeric_state
+        entity_id: sensor.meter_e975
+        above: 15
+      sequence:
+      - action: rest_command.1f_toilet_heater_off
+        data: {}
+      - data:
+          message: '❄️ トイレヒーターOFF: 室温 {{ states(''sensor.meter_e975'') }}℃'
+        action: notify.mobile_app_iphone_12mini_a2398
+        enabled: false
+    - conditions:
+      - condition: not
+        conditions:
+        - condition: time
+          after: '21:00:00'
+          before: 07:00:00
+      sequence:
+      - action: rest_command.1f_toilet_heater_off
+        data: {}
+      - data:
+          message: '❄️ トイレヒーターOFF: 許可時間外のため自動OFF'
+        action: notify.mobile_app_iphone_12mini_a2398
+        enabled: false
+  mode: single
+- id: '1739576405317'
+  alias: '[消さない] テスト_グーグルキャスト'
+  description: ''
+  triggers: []
+  conditions: []
+  actions:
+  - action: cast.show_lovelace_view
+    metadata: {}
+    data:
+      entity_id: media_player.yi_jie_ju_jian_1
+      view_path: miri
+      dashboard_path: dashboard-unknown
+  - action: media_player.play_media
+    target:
+      entity_id: media_player.yi_jie_ju_jian_1
+    data:
+      media_content_id: https://www.home-assistant.io/
+      media_content_type: url
+  - action: media_player.play_media
+    target:
+      entity_id: media_player.yi_jie_ju_jian_1
+    data:
+      media_content_type: video/mp4
+      media_content_id: http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4
+  mode: single
+- id: '1739970611778'
+  alias: '[消さない] テスト: カスタムイベント発火'
+  description: input_boolean が ON になったときにカスタムイベントを発火します
+  triggers: []
+  actions:
+  - event: play_video
+    event_data:
+      text: '室温は、{{ states(''sensor.meter_e975'') }}度です。
+
+
+        明日は晴れになるでしょう。
+
+        改行して表示しています。'
+      cast_entity: media_player.yi_jie_ju_jian_1
+      mode: caution
+  mode: single
+- id: '1740275643094'
+  alias: 居間_OFF_/5min
+  description: 'このオートメーションは、5分ごとに人感センサーと家族センサーの状態を確認し、
+
+    人感センサーが5分以上「off」の状態であれば、
+
+    機器の消し忘れ防止として自動で電源をオフにします。
+
+
+    ■ 空調：
+
+    朝4時～7時の間は使用中のため、OFFコマンドは実行しません。
+
+
+    ■ こたつ・テレビ・照明：
+
+    通常どおり制御対象とします。
+
+
+    ■ 照明の挙動：
+
+    日の入り後〜23時までは点灯し、
+
+    それ以外の時間帯は消灯します。
+
+
+    実行時には、家族への注意喚起として、
+
+    通知およびメディアプレイヤーにメッセージを表示します。'
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.mmwave_livingroom_1f_presence
+    to:
+    - 'off'
+    for:
+      hours: 0
+      minutes: 30
+      seconds: 0
+  conditions: []
+  actions:
+  - alias: ライト
+    sequence:
+    - condition: state
+      entity_id: light.livingroom_light_01
+      state: 'on'
+    - action: light.turn_off
+      metadata: {}
+      data: {}
+      target:
+        entity_id: light.livingroom_light_01
+    - wait_template: '{{ is_state(''light.livingroom_light_01'', ''off'') }}'
+      timeout: 00:00:02
+      continue_on_timeout: true
+    - delay:
+        hours: 0
+        minutes: 0
+        seconds: 1
+        milliseconds: 0
+  - alias: コタツ
+    sequence:
+    - action: switch.turn_off
+      metadata: {}
+      data: {}
+      target:
+        entity_id: switch.kotatsu_1f_livingroom
+    - wait_template: '{{ is_state(''switch.kotatsu_1f_livingroom'', ''off'') }}'
+      timeout: 00:00:02
+      continue_on_timeout: true
+    - delay:
+        hours: 0
+        minutes: 0
+        seconds: 1
+        milliseconds: 0
+  - alias: エアコン
+    sequence:
+    - action: climate.turn_off
+      metadata: {}
+      data: {}
+      target:
+        entity_id: climate.ac_livingroom
+    - wait_template: '{{ is_state(''climate.ac_livingroom'', ''off'') }}'
+      timeout: 00:00:02
+      continue_on_timeout: true
+    - delay:
+        hours: 0
+        minutes: 0
+        seconds: 1
+        milliseconds: 0
+  - alias: ファン
+    sequence:
+    - condition: state
+      entity_id: fan.livingroom_fan_01
+      state: 'on'
+    - action: fan.turn_off
+      metadata: {}
+      data: {}
+      target:
+        entity_id: fan.livingroom_fan_01
+    - wait_template: '{{ is_state(''fan.livingroom_fan_01'', ''off'') }}'
+      timeout: 00:00:02
+      continue_on_timeout: true
+    - delay:
+        hours: 0
+        minutes: 0
+        seconds: 1
+        milliseconds: 0
+  - alias: テレビ
+    sequence:
+    - condition: state
+      entity_id: binary_sensor.tv_1f_livingroom_power
+      state: 'on'
+    - action: media_player.turn_off
+      metadata: {}
+      data: {}
+      target:
+        entity_id: media_player.livingroom_tv
+    - wait_template: '{{ is_state(''media_player.tv_living'', ''off'') }}'
+      continue_on_timeout: true
+      timeout: 00:00:30
+    - delay:
+        hours: 0
+        minutes: 0
+        seconds: 1
+        milliseconds: 0
+  - event: play_image
+    event_data:
+      text: '消し忘れ防止を実施しました
+
+
+        対象: 照明/空調/テレビ/こたつ
+
+
+        理由: 5分間、動作を未検
+
+
+        対策: 席から立ち上がる'
+      cast_entity: media_player.yi_jie_ju_jian_1
+      mode: default
+  mode: restart
+- id: '1741219795722'
+  alias: 低温時の定期画像キャストと通知（父が1階ベッドルーム在室時のみ）
+  description: 1階和室の温度が14度以下で持続し、かつ父（sensor.esppresence_phone_kakumi）が10分間1f_bedRoomを保持している場合、5分ごとに画像キャストで警告を送ります。
+  triggers:
+  - entity_id: sensor.meter_4f04
+    below: 14
+    trigger: numeric_state
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.family_room_sensor_1f_bedroom_kakumi
+    state: 'on'
+    enabled: false
+  actions:
+  - repeat:
+      sequence:
+      - event: play_image
+        event_data:
+          text: '【1階和室 温度警告】
+
+
+            現在の温度は {{ states(''sensor.meter_4f04'') }}度です。
+
+
+            低温状態が継続しています。
+
+            暖房などの対策をお願いします。'
+          cast_entity: group.google_home_devices_all
+          mode: cold
+      - action: notify.mobile_app_iphone_12mini_a2398
+        metadata: {}
+        data:
+          message: 【1階和室 温度警告】現在の温度は{{ states('sensor.meter_4f04') }}度です。低温状態が継続しています。暖房などの対策をお願いします。
+      - delay:
+          minutes: 5
+      count: 3
+    enabled: true
+  mode: single
+- id: '1741391195484'
+  alias: 二階和室 エアコン 自動停止
+  description: "このオートメーションは、 エアコンの風が廊下に流出する状況を検知して自動的にエアコンを停止する仕組みです。 \n検知条件は以下の通りです:
+    \  1. 直接の経路として、端の部屋から廊下へつながるドア1 (binary_sensor.contact_sensor_255b_2)\n   が5分以上開いている場合。\n2.
+    間接的な経路として、端の部屋と中の部屋を連結する扉（ドア4: binary_sensor.contact_sensor_c527_2\n   または ドア5:
+    binary_sensor.contact_sensor_c2b6_2）が開いており、かつ、中の部屋から廊下へ出る扉\n   （ドア2: binary_sensor.contact_sensor_c692_2
+    または ドア3: binary_sensor.contact_sensor_b083_2）\n   が5分以上開いている場合。\nいずれかの条件に該当すると、エアコンの電源（switchエンティティ
+    e92e1bf17980ea3dd075268d7a43e811） を自動でオフにし、同時にmedia_player.er_jie_he_shi_1へ、停止した旨を伝える通知を送信します。\n停止原因が除去されずに運転されることを想定すると、アクションを一定回数繰り返すことも必要なので、
+    その点については、後日に追加していく。 その際には、エアコンがオンになっているかどうかの判定をするセンサーが必要になってくると思う。\n"
+  triggers:
+  - entity_id:
+    - binary_sensor.contact_sensor_255b_2
+    to: 'on'
+    for:
+      hours: 0
+      minutes: 30
+      seconds: 0
+    trigger: state
+  - entity_id:
+    - binary_sensor.contact_sensor_c692_2
+    to: 'on'
+    for:
+      hours: 0
+      minutes: 30
+      seconds: 0
+    trigger: state
+  - entity_id:
+    - binary_sensor.contact_sensor_b083_2
+    to: 'on'
+    for:
+      hours: 0
+      minutes: 30
+      seconds: 0
+    trigger: state
+  conditions:
+  - condition: or
+    conditions:
+    - condition: state
+      entity_id: binary_sensor.contact_sensor_255b_2
+      state: 'on'
+    - condition: and
+      conditions:
+      - condition: or
+        conditions:
+        - condition: state
+          entity_id: binary_sensor.contact_sensor_c527_2
+          state: 'on'
+        - condition: state
+          entity_id: binary_sensor.contact_sensor_c2b6_2
+          state: 'on'
+      - condition: or
+        conditions:
+        - condition: state
+          entity_id: binary_sensor.contact_sensor_c692_2
+          state: 'on'
+        - condition: state
+          entity_id: binary_sensor.contact_sensor_b083_2
+          state: 'on'
+  actions:
+  - type: turn_off
+    device_id: f4bccaf41ebb3cc28b8cb461f7e812b4
+    entity_id: e92e1bf17980ea3dd075268d7a43e811
+    domain: switch
+    enabled: true
+  - event: play_image
+    event_data:
+      text: '消し忘れ防止を実施しました。
+
+        対象: エアコン
+
+
+        対策:和室の扉を閉じる。
+
+
+        ・襖を閉める。若しくは、
+
+        ・寝室の扉を閉める。'
+      cast_entity: media_player.er_jie_he_shi_1
+      mode: default
+  mode: single
+- id: '1742360888818'
+  alias: 火災報知器アラーム（繰り返し）
+  description: "移報接点が一定時間以上作動している場合、繰り返し警告を実施。 \nノーマルクローズ接点のため、火災報知器作動時は\"off\"状態になります。\n"
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.fire_alarm_contact
+    to:
+    - 'off'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 5
+    id: alarm_active
+  - trigger: state
+    entity_id:
+    - binary_sensor.fire_alarm_contact
+    to:
+    - 'on'
+    id: alarm_recovered
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: alarm_active
+      sequence:
+      - repeat:
+          count: 10
+          sequence:
+          - condition: state
+            entity_id: binary_sensor.fire_alarm_contact
+            state: 'off'
+          - action: notify.mobile_app_iphone_12mini_a2398
+            continue_on_error: true
+            data:
+              message: 火災報知器が作動中です!!
+          - event: play_video
+            continue_on_error: true
+            event_data:
+              text: 火災報知器が作動中です!!
+              cast_entity: group.google_home_devices_all
+              mode: warning
+          - delay:
+              hours: 0
+              minutes: 0
+              seconds: 10
+              milliseconds: 0
+    - conditions:
+      - condition: trigger
+        id: alarm_recovered
+      sequence:
+      - action: notify.mobile_app_iphone_12mini_a2398
+        continue_on_error: true
+        data:
+          message: 火災報知器が復旧しました。現地の安全を確認してください。
+      - event: play_video
+        continue_on_error: true
+        event_data:
+          text: 火災報知器が復旧しました
+          cast_entity: group.google_home_devices_all
+          mode: info
+  mode: restart
+- id: '1743762028706'
+  alias: 1階居間
+  description: ''
+  triggers:
+  - topic: zigbee2mqtt/controller_livingroom_1f
+    trigger: mqtt
+  conditions:
+  - condition: template
+    value_template: '{{ trigger.payload_json.action is defined }}'
+  actions:
+  - choose:
+    - alias: 1_single
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action == ''1_single'' }}'
+      sequence:
+      - alias: TTS
+        data:
+          cache: true
+          language: ja
+          media_player_entity_id: media_player.yi_jie_ju_jian_1
+          message: ライト、コタツ、エアコン、テレビ、てんじょうせんを消しました。
+        action: tts.speak
+        target:
+          entity_id: tts.google_translate_en_com
+      - alias: ライト
+        sequence:
+        - condition: state
+          entity_id: light.livingroom_light_01
+          state: 'on'
+        - action: light.turn_off
+          metadata: {}
+          data: {}
+          target:
+            entity_id: light.livingroom_light_01
+        - wait_template: '{{ is_state(''light.livingroom_light_01'', ''off'') }}'
+          timeout: 00:00:02
+          continue_on_timeout: true
+        - delay:
+            hours: 0
+            minutes: 0
+            seconds: 1
+            milliseconds: 0
+      - alias: コタツ
+        sequence:
+        - action: switch.turn_off
+          metadata: {}
+          data: {}
+          target:
+            entity_id: switch.kotatsu_1f_livingroom
+        - wait_template: '{{ is_state(''switch.kotatsu_1f_livingroom'', ''off'') }}'
+          timeout: 00:00:02
+          continue_on_timeout: true
+        - delay:
+            hours: 0
+            minutes: 0
+            seconds: 1
+            milliseconds: 0
+      - alias: エアコン
+        sequence:
+        - action: climate.turn_off
+          metadata: {}
+          data: {}
+          target:
+            entity_id: climate.ac_livingroom
+        - wait_template: '{{ is_state(''climate.ac_livingroom'', ''off'') }}'
+          timeout: 00:00:02
+          continue_on_timeout: true
+        - delay:
+            hours: 0
+            minutes: 0
+            seconds: 1
+            milliseconds: 0
+      - alias: ファン
+        sequence:
+        - condition: state
+          entity_id: fan.livingroom_fan_01
+          state: 'on'
+        - action: fan.turn_off
+          metadata: {}
+          data: {}
+          target:
+            entity_id: fan.livingroom_fan_01
+        - wait_template: '{{ is_state(''fan.livingroom_fan_01'', ''off'') }}'
+          timeout: 00:00:02
+          continue_on_timeout: true
+        - delay:
+            hours: 0
+            minutes: 0
+            seconds: 1
+            milliseconds: 0
+      - alias: テレビ
+        sequence:
+        - condition: state
+          entity_id: binary_sensor.tv_1f_livingroom_power
+          state: 'on'
+        - action: media_player.turn_off
+          metadata: {}
+          data: {}
+          target:
+            entity_id: media_player.livingroom_tv
+        - wait_template: '{{ is_state(''media_player.tv_living'', ''off'') }}'
+          continue_on_timeout: true
+          timeout: 00:00:30
+        - delay:
+            hours: 0
+            minutes: 0
+            seconds: 1
+            milliseconds: 0
+    - alias: 2_single
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action == ''2_single'' }}'
+      sequence:
+      - action: light.turn_on
+        metadata: {}
+        data: {}
+        target:
+          entity_id: light.livingroom_light_01
+    - alias: 2_hold, 2_double
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action in [''2_hold'', ''2_double'']
+          }}'
+      sequence:
+      - action: light.turn_off
+        metadata: {}
+        data: {}
+        target:
+          entity_id: light.livingroom_light_01
+    - alias: 3_single
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action == ''3_single'' }}'
+      sequence:
+      - action: switch.turn_on
+        metadata: {}
+        data: {}
+        target:
+          entity_id: switch.kotatsu_1f_livingroom
+    - alias: 3_hold, 3_double
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action in [''3_hold'', ''3_double'']
+          }}
+
+          '
+      sequence:
+      - action: switch.turn_off
+        metadata: {}
+        data: {}
+        target:
+          entity_id: switch.kotatsu_1f_livingroom
+    - alias: 4_single
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action == ''4_single'' }}'
+      sequence:
+      - action: fan.turn_on
+        metadata: {}
+        data: {}
+        target:
+          entity_id: fan.livingroom_fan_01
+    - alias: 4_hold, 4_double
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action in [''4_hold'', ''4_double'']
+          }}'
+      sequence:
+      - action: fan.turn_off
+        metadata: {}
+        data: {}
+        target:
+          entity_id: fan.livingroom_fan_01
+    enabled: true
+  mode: single
+- id: '1743916463175'
+  alias: 緊急アラート通知（家内ボタン）
+  description: トイレ・寝室・廊下などのボタンが押されたときに、Google Home とスマホへ通知を送ります。
+  triggers:
+  - topic: zigbee2mqtt/alert_button_hallway_1f
+    trigger: mqtt
+  - topic: zigbee2mqtt/alert_button_bedroom_1f
+    trigger: mqtt
+  - topic: zigbee2mqtt/alert_button_toilet_1f
+    trigger: mqtt
+  - topic: zigbee2mqtt/alert_button_laundryroom_1f
+    trigger: mqtt
+  - topic: zigbee2mqtt/alert_button_portable
+    trigger: mqtt
+  conditions:
+  - condition: template
+    value_template: '{{ trigger.payload_json.action in [''single'', ''double'', ''hold'']
+      }}
+
+      '
+  actions:
+  - variables:
+      location_map:
+        zigbee2mqtt/alert_button_hallway_1f: 1階の廊下
+        zigbee2mqtt/alert_button_bedroom_1f: 1階の寝室
+        zigbee2mqtt/alert_button_toilet_1f: 1階のトイレ
+        zigbee2mqtt/alert_button_laundryroom_1f: 1階の脱衣所
+        zigbee2mqtt/alert_button_portable: 持ち歩きボタン
+      location: '{{ location_map[trigger.topic] }}'
+  - repeat:
+      count: 3
+      sequence:
+      - event: play_video
+        event_data:
+          text: '「{{ location }}」で
+
+
+            助けを求めています!!'
+          cast_entity: group.google_home_devices_all
+          mode: warning
+      - data:
+          title: ナースコール
+          message: 「{{ location }}」で、助けを求めています!!
+        action: notify.mobile_app_iphone_12mini_a2398
+      - delay:
+          seconds: 15
+  mode: queued
+  max: 10
+- id: '1744027602513'
+  alias: ボタンのバッテリー低下通知
+  description: ボタンのバッテリーが20%未満になったときにスマホへ通知します。
+  triggers:
+  - entity_id:
+    - sensor.alert_button_toilet_1f_battery
+    - sensor.alert_button_portable_battery
+    - sensor.alert_button_laundryroom_1f_battery
+    - sensor.alert_button_hallway_1f_battery
+    - sensor.alert_button_bedroom_1f_battery
+    below: 20
+    trigger: numeric_state
+  conditions: []
+  actions:
+  - data:
+      title: バッテリー警告
+      message: 'バッテリー残量が少ないボタンがあります：{{ state_attr(trigger.entity_id, ''friendly_name'')
+        }}（{{ states(trigger.entity_id) }}%）
+
+        '
+    action: notify.mobile_app_iphone_12mini_a2398
+  mode: single
+- id: '1745293242441'
+  alias: 2階和室 中 不在時
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.0x54ef441000dae776_presence
+    to: 'off'
+    for:
+      hours: 0
+      minutes: 30
+      seconds: 0
+  conditions: []
+  actions:
+  - action: switch.turn_off
+    target:
+      entity_id: switch.plug_mini_jp_a552
+  - action: notify.mobile_app_iphone_12mini_a2398
+    data:
+      message: 2階和室 中 30分間不在のため、自動オフしました。
+  mode: single
+- id: '1745490332764'
+  alias: 2階和室 端 不在時
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.0x54ef441000dafb88_presence
+    to: 'off'
+    for:
+      hours: 0
+      minutes: 30
+      seconds: 0
+  conditions: []
+  actions:
+  - action: switch.turn_off
+    target:
+      entity_id: switch.kotatsu_2f_jsroom
+  - action: notify.mobile_app_iphone_12mini_a2398
+    data:
+      message: 和室端で30分未検出だったので、こたつを消しました。
+  mode: single
+- id: '1746603855859'
+  alias: 2階和室 不在時
+  description: "【概要】 2階和室の2つのPresenceセンサー （端の部屋: binary_sensor.0x54ef441000dafb88_presence、\n
+    \ 中の部屋: binary_sensor.0x54ef441000dae776_presence）\nの両方が、30分以上連続して「off（不在）」のまま変化していない場合に実行。\n照明（シーリングライト、照明、エアコン）を自動でオフにし、
+    テレビがON（input_booleanで監視）であればオフにする。\n実行後は1分間のクールダウン（再実行防止）を設ける。\n\n【待機の仕様と試行錯誤】
+    当初は `wait_for_trigger` を使用し、 センサーの状態が「off」のまま30分間継続することを検出する構成を検討した。 しかし、この手法には以下の制限があることが判明した：\n・`wait_for_trigger`
+    は、オートメーションが開始された後に\n  対象センサーが「on → off」になって初めて“待機”がスタートする。\n・すでに「off」の状態だったセンサーに対しては、\n
+    \ 過去の状態は無視されるため、30分経過していてもトリガーとならない。\n・つまり、「片方が常にoffだった」ケースでは、\n  もう片方が「on → off」になるまで反応が開始されないという\n
+    \ 想定外の動作となる。\n\nこの制約を回避するため、以下の構成に切り替えた：\n1. トリガーとしては単に「どちらかのセンサーがoffになったとき」に反応させる。
+    2. その後 `delay` で30分待機。 3. 30分後の時点で、\n   両方のセンサーが「off」であり、かつその状態が30分以上続いていることを\n
+    \  `states.xxx.last_changed` を用いたテンプレートで判定する。\n\nこの方式により、 ・どちらのセンサーが先にoffになっていたとしても
+    ・30分間ずっとoffで変化がなかった場合に 正しく不在と判定できるようになった。\nまた、Home AssistantのUI(開発者ツール)では `last_changed`属性が直接は表示されないが、
+    jinjaテンプレートからは取得可能であるため、内部的には信頼できる判定となる。\n"
+  triggers:
+  - entity_id:
+    - binary_sensor.0x54ef441000dafb88_presence
+    - binary_sensor.0x54ef441000dae776_presence
+    to: 'off'
+    trigger: state
+  conditions: []
+  actions:
+  - delay:
+      hours: 0
+      minutes: 30
+      seconds: 0
+      milliseconds: 0
+  - condition: template
+    value_template: "{{ is_state('binary_sensor.0x54ef441000dafb88_presence', 'off')
+      and\n   is_state('binary_sensor.0x54ef441000dae776_presence', 'off') and\n   (now()
+      - states.binary_sensor['0x54ef441000dafb88_presence'].last_changed).total_seconds()
+      > 1800 and\n   (now() - states.binary_sensor['0x54ef441000dae776_presence'].last_changed).total_seconds()
+      > 1800 }}\n"
+  - target:
+      entity_id:
+      - switch.sirinkuraito
+      - switch.2jie_he_shi_zhong_zhao_ming
+      - switch.2f_he_shi_eakon
+    action: switch.turn_off
+    data: {}
+    enabled: false
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.tv_2f_jsroom
+        state: 'on'
+      sequence:
+      - target:
+          entity_id: switch.2f_he_shi_duan_terehi
+        action: switch.turn_off
+        data: {}
+      - data:
+          message: "{{\n  '中の部屋' if trigger.entity_id == 'binary_sensor.0x54ef441000dae776_presence'\n
+            \ else '端の部屋'\n}} のセンサーがトリガーになりました。テレビを消しました。\n"
+        action: notify.mobile_app_iphone_12mini_a2398
+    default:
+    - data:
+        message: "{{\n  '中の部屋' if trigger.entity_id == 'binary_sensor.0x54ef441000dae776_presence'\n
+          \ else '端の部屋'\n}} のセンサーがトリガーになりました。テレビはオフのままでした。\n"
+      action: notify.mobile_app_iphone_12mini_a2398
+    enabled: false
+  - delay: 00:01:00
+    enabled: false
+  - action: notify.mobile_app_iphone_12mini_a2398
+    data:
+      message: 2階和室の二部屋で30分不在を検知
+      data:
+        url: /dashboard-pi/4
+      title: リンク先で確認してください。
+  mode: restart
+- id: '1747039849690'
+  alias: ハイハイ店番 通知
+  description: '車道および歩道の人感センサーによる検知時に通知を行い、必要に応じてスナップショットを取得・再生する。 車道側ではカメラスナップショットを取得し、スマホとGoogle
+    Homeに画像付き通知を送信。 歩道側では簡易通知と音声再生イベントを実行する。 通知後、30秒後にGoogle Homeを停止し、状態フラグをリセットする。
+
+    '
+  triggers:
+  - entity_id: binary_sensor.1stfactory_1f_motionsensor_pir_motion_sensor_large
+    to: 'on'
+    id: large
+    trigger: state
+  - entity_id: binary_sensor.1stfactory_1f_motionsensor_pir_motion_sensor_small
+    to: 'on'
+    id: small
+    trigger: state
+  - entity_id: binary_sensor.back_yard_vehicle
+    to: 'on'
+    id: vehicle
+    trigger: state
+    enabled: false
+  - entity_id: binary_sensor.back_yard_person
+    to: 'on'
+    id: person
+    trigger: state
+    enabled: false
+  conditions: []
+  actions:
+  - variables:
+      filepath: /config/www/snapshots/{{ now().strftime('%Y%m%d_%H%M%S') }}.jpg
+      filename: /local/snapshots/{{ now().strftime('%Y%m%d_%H%M%S') }}.jpg
+  - target:
+      entity_id: input_text.hihi_last_trigger
+    data:
+      value: "{% if trigger.id == 'large' %}\n  車道\n{% elif trigger.id == 'small'
+        %}\n  歩道\n{% elif trigger.id == 'vehicle' %}\n  車両検知\n{% elif trigger.id ==
+        'person' %}\n  人物検知\n{% else %}\n  不明\n{% endif %}\n"
+    action: input_text.set_value
+  - target:
+      entity_id: input_boolean.hihi_car
+    action: input_boolean.turn_on
+    data: {}
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.id in [''large'', ''vehicle'', ''person''] }}'
+      sequence:
+      - alias: Sends a notification
+        sequence:
+        - data:
+            filename: '{{ filepath }}'
+          action: camera.snapshot
+          target:
+            entity_id:
+            - camera.back_door_snapshots_fluent
+        - data:
+            title: 【検知】
+            message: '{{ states(''input_text.hihi_last_trigger'') }}のセンサーが反応しました。'
+            data:
+              image: '{{ filename }}'
+          action: notify.mobile_app_iphone_12mini_a2398
+      - alias: Google Cast
+        parallel:
+        - action: webrtc.dash_cast
+          metadata: {}
+          data:
+            entity_id: media_player.yi_jie_ju_jian_1
+            url: reolink_sub02
+            extra:
+              mode: webrtc
+        - action: webrtc.dash_cast
+          metadata: {}
+          data:
+            entity_id: media_player.googlehome3856
+            url: reolink_sub02
+            extra:
+              mode: webrtc
+        - action: webrtc.dash_cast
+          metadata: {}
+          data:
+            entity_id: media_player.nesthubc997
+            url: reolink_sub02
+            extra:
+              mode: webrtc
+        - action: webrtc.dash_cast
+          metadata: {}
+          data:
+            entity_id: media_player.er_jie_yang_shi
+            url: reolink_sub02
+            extra:
+              mode: webrtc
+        - action: webrtc.dash_cast
+          metadata: {}
+          data:
+            entity_id: media_player.er_jie_he_shi_1
+            url: reolink_sub02
+            extra:
+              mode: webrtc
+        - action: webrtc.dash_cast
+          metadata: {}
+          data:
+            entity_id: media_player.er_jie_he_shi_2
+            url: reolink_sub02
+            extra:
+              mode: webrtc
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.id == ''small'' }}'
+      sequence:
+      - alias: Sends a notification
+        sequence:
+        - data:
+            entity_id: camera.back_yard_snapshots_fluent
+            filename: '{{ filepath }}'
+          action: camera.snapshot
+        - data:
+            title: 【検知】
+            message: 歩道のセンサーが反応しました。
+          action: notify.mobile_app_iphone_12mini_a2398
+      - alias: Google Cast
+        parallel:
+        - action: webrtc.dash_cast
+          metadata: {}
+          data:
+            entity_id: media_player.yi_jie_ju_jian_1
+            url: reolink_sub01
+            extra:
+              mode: webrtc
+        - action: webrtc.dash_cast
+          metadata: {}
+          data:
+            entity_id: media_player.googlehome3856
+            url: reolink_sub01
+            extra:
+              mode: webrtc
+        - action: webrtc.dash_cast
+          metadata: {}
+          data:
+            entity_id: media_player.nesthubc997
+            url: reolink_sub01
+            extra:
+              mode: webrtc
+        - action: webrtc.dash_cast
+          metadata: {}
+          data:
+            entity_id: media_player.er_jie_yang_shi
+            url: reolink_sub01
+            extra:
+              mode: webrtc
+        - action: webrtc.dash_cast
+          metadata: {}
+          data:
+            entity_id: media_player.er_jie_he_shi_1
+            url: reolink_sub01
+            extra:
+              mode: webrtc
+        - action: webrtc.dash_cast
+          metadata: {}
+          data:
+            entity_id: media_player.er_jie_he_shi_2
+            url: reolink_sub01
+            extra:
+              mode: webrtc
+  - delay:
+      hours: 0
+      minutes: 1
+      seconds: 0
+      milliseconds: 0
+  - target:
+      entity_id: group.google_home_devices_all
+    action: media_player.turn_off
+    data: {}
+  - target:
+      entity_id: input_boolean.hihi_car
+    action: input_boolean.turn_off
+    data: {}
+  mode: single
+- id: '1749110002126'
+  alias: 洗濯機の完了通知
+  description: ''
+  triggers:
+  - entity_id:
+    - sensor.plug_mini_jp_1abe_power
+    below: 5
+    for:
+      hours: 0
+      minutes: 10
+      seconds: 0
+    trigger: numeric_state
+  conditions:
+  - condition: not
+    conditions:
+    - condition: time
+      after: '23:00:00'
+      before: 07:00:00
+  actions:
+  - alias: モバイルへ通知
+    action: notify.mobile_app_iphone_12mini_a2398
+    data:
+      message: "\U0001F9FA 洗濯が完了しました。"
+  - alias: ダッシュボードへ通知
+    action: script.unknown_6
+    data:
+      message: "\U0001F9FA 洗濯が完了しました。"
+      url: ''
+      kind: security
+      level: info
+      max: 5
+  mode: restart
+- id: '1749535085585'
+  alias: 湿度管理_脱衣所
+  description: ''
+  use_blueprint:
+    path: homeassistant/dehumidifier.yaml
+    input:
+      humidity_sensor: sensor.meter_23e9_humidity
+      plug_switch: switch.plug_mini_jp_94d2
+      bot_switch: switch.bot_5137
+      notify_device: c7432b9c967acfe61be0011649eb72a6
+      area: 1f_changingroom
+      timer_off: timer.datsuijo_plug_off
+      timer_max: timer.datsuijo_plug_max
+      humidity_on_threshold: 70
+      humidity_off_threshold: 65
+      notify_enabled: false
+- id: '1749541779485'
+  alias: 湿度管理_車庫
+  description: ''
+  use_blueprint:
+    path: homeassistant/dehumidifier.yaml
+    input:
+      humidity_sensor: sensor.meter_335f_humidity
+      plug_switch: switch.plug_mini_jp_4772
+      bot_switch: switch.bot_c649
+      notify_device: c7432b9c967acfe61be0011649eb72a6
+      area: factory_2nd
+      timer_off: timer.factory2nd_plug_off
+      timer_max: timer.factory2nd_plug_max
+      notify_enabled: false
+- id: '1749542026274'
+  alias: 湿度管理_工場no1
+  description: ''
+  use_blueprint:
+    path: homeassistant/dehumidifier.yaml
+    input:
+      humidity_sensor: sensor.meter_5c2a_humidity
+      plug_switch: switch.plug_mini_jp_51b2
+      bot_switch: switch.1_bot
+      notify_device: c7432b9c967acfe61be0011649eb72a6
+      area: factory_1st
+      timer_off: timer.factory1stno1_plug_off
+      timer_max: timer.factory1stno1_plug_max
+      humidity_on_threshold: 70
+      humidity_off_threshold: 65
+      notify_enabled: false
+- id: '1749542653607'
+  alias: 湿度管理_地下室
+  description: ''
+  use_blueprint:
+    path: homeassistant/dehumidifier.yaml
+    input:
+      humidity_sensor: sensor.meter_6b39_humidity
+      plug_switch: switch.plug_mini_jp_3876
+      bot_switch: switch.bot_bbf4
+      notify_device: c7432b9c967acfe61be0011649eb72a6
+      area: b1f_basement
+      timer_off: timer.basement_plug_off
+      timer_max: timer.basement_plug_max
+      humidity_on_threshold: 70
+      humidity_off_threshold: 65
+      notify_enabled: false
+- id: '1749674928620'
+  alias: 工具机_充電開始_コンセントオン
+  description: 充電が開始されたら input_boolean を ON にする
+  triggers:
+  - entity_id: sensor.plug_mini_jp_b29a_power
+    above: 50
+    trigger: numeric_state
+  conditions:
+  - condition: state
+    entity_id: input_boolean.input_boolean_charging_flag_kougu
+    state: 'off'
+  actions:
+  - action: input_boolean.turn_on
+    data: {}
+    target:
+      entity_id:
+      - input_boolean.input_boolean_charging_flag_kougu
+  mode: single
+- id: '1749675003840'
+  alias: 工具机_充電完了_コンセントオフ
+  description: フラグON中に5W未満が5分続いたらOFF
+  triggers:
+  - entity_id: sensor.plug_mini_jp_b29a_power
+    below: 5
+    for:
+      minutes: 5
+    trigger: numeric_state
+  conditions:
+  - condition: state
+    entity_id: switch.plug_mini_jp_b29a
+    state: 'on'
+  - condition: state
+    entity_id: input_boolean.input_boolean_charging_flag_kougu
+    state: 'on'
+  actions:
+  - target:
+      entity_id: switch.plug_mini_jp_b29a
+    action: switch.turn_off
+    data: {}
+  - action: input_boolean.turn_off
+    data: {}
+    target:
+      entity_id:
+      - input_boolean.input_boolean_charging_flag_kougu
+  - data:
+      message: 【充電完了】工具机
+    action: notify.mobile_app_iphone_12mini_a2398
+  mode: single
+- id: '1750126433191'
+  alias: 2階和室端
+  description: ''
+  triggers:
+  - topic: zigbee2mqtt/controller_jsroom_2f_end
+    trigger: mqtt
+  conditions:
+  - condition: template
+    value_template: '{{ trigger.payload_json.action is defined }}'
+    enabled: true
+  actions:
+  - choose:
+    - conditions:
+      - alias: 1ボタン シングルクリック
+        condition: template
+        value_template: '{{ trigger.payload_json.action == ''1_single'' }}'
+      sequence:
+      - alias: テレビ OFF（input_boolean が on のとき）
+        condition: state
+        entity_id: input_boolean.tv_2f_jsroom
+        state: 'on'
+      - action: switch.turn_off
+        target:
+          entity_id: switch.2f_he_shi_duan_terehi
+        data: {}
+      - alias: シーリングライト OFF
+        action: switch.turn_off
+        target:
+          entity_id: switch.sirinkuraito
+        data: {}
+      - alias: エアコン OFF
+        action: switch.turn_off
+        metadata: {}
+        data: {}
+        target:
+          entity_id: switch.2f_he_shi_eakon
+      - alias: TTS読み上げ（1ボタン）
+        action: tts.speak
+        target:
+          entity_id: tts.google_translate_en_com
+        data:
+          cache: true
+          language: ja
+          media_player_entity_id: media_player.er_jie_he_shi_1
+          message: シーリングライト、テレビ、エアコンをオフにしました。
+    - conditions:
+      - alias: 2ボタン シングルクリック
+        condition: template
+        value_template: '{{ trigger.payload_json.action == ''2_single'' }}'
+      sequence:
+      - alias: シーリングライト ON
+        action: switch.turn_on
+        target:
+          entity_id: switch.sirinkuraito
+        data: {}
+    - conditions:
+      - alias: 2ボタン ダブルクリック
+        condition: template
+        value_template: '{{ trigger.payload_json.action in [''2_hold'', ''2_double'']
+          }}'
+      sequence:
+      - action: switch.turn_off
+        target:
+          entity_id: switch.sirinkuraito
+        data: {}
+    - conditions:
+      - alias: 3ボタン シングルクリック
+        condition: template
+        value_template: '{{ trigger.payload_json.action == ''3_single'' }}'
+      sequence:
+      - alias: テレビ ON
+        action: switch.turn_on
+        target:
+          entity_id: switch.2f_he_shi_duan_terehi
+        data: {}
+    - conditions:
+      - alias: 3ボタン ダブルまたは長押し
+        condition: template
+        value_template: '{{ trigger.payload_json.action in [''3_double'', ''3_hold'']
+          }}'
+      sequence:
+      - alias: テレビ OFF
+        action: switch.turn_off
+        target:
+          entity_id: switch.2f_he_shi_duan_terehi
+        data: {}
+    - conditions:
+      - alias: 4ボタン シングルクリック
+        condition: template
+        value_template: '{{ trigger.payload_json.action == ''4_single'' }}'
+      sequence:
+      - action: media_player.volume_set
+        metadata: {}
+        data:
+          volume_level: 0.8
+        target:
+          entity_id: media_player.er_jie_yang_shi
+      - action: media_player.play_media
+        target:
+          entity_id: media_player.er_jie_yang_shi
+        data:
+          media_content_type: cast
+          media_content_id: '{ "app_name": "youtube", "media_id": "WTxgXQsqdyA" }'
+        metadata: {}
+      - delay:
+          hours: 0
+          minutes: 2
+          seconds: 0
+          milliseconds: 0
+      - action: media_player.volume_set
+        metadata: {}
+        data:
+          volume_level: 0.3
+        target:
+          entity_id: media_player.er_jie_yang_shi
+  mode: queued
+  max: 10
+- id: '1750210346577'
+  alias: 2階和室中
+  description: ''
+  triggers:
+  - topic: zigbee2mqtt/controller_jsroom_2f_center
+    trigger: mqtt
+  conditions:
+  - condition: template
+    value_template: '{{ trigger.payload_json.action is defined }}'
+  actions:
+  - choose:
+    - alias: 1ボタン シングルクリック
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action == ''1_single'' }}'
+      sequence:
+      - alias: シーリングライト ON
+        target:
+          entity_id: switch.2jie_he_shi_zhong_zhao_ming
+        action: switch.turn_on
+        data: {}
+    - alias: 1ボタン ダブルクリック
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action in [''1_hold'', ''1_double'']
+          }}'
+      sequence:
+      - alias: シーリングライト OFF
+        target:
+          entity_id: switch.2jie_he_shi_zhong_zhao_ming
+        action: switch.turn_off
+        data: {}
+    - alias: 2ボタン シングルクリック
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action == ''2_single'' }}'
+      sequence:
+      - alias: ヒーター ON
+        target:
+          entity_id: switch.wu_shang
+        action: switch.turn_on
+        data: {}
+    - alias: 2ボタン ダブルクリック
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action in [''2_hold'', ''2_double'']
+          }}'
+      sequence:
+      - alias: ヒーター OFF
+        target:
+          entity_id: switch.wu_shang
+        action: switch.turn_off
+        data: {}
+    - alias: 3ボタン シングルクリック
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action == ''3_single'' }}'
+      sequence:
+      - alias: シーリングライト ON
+        target:
+          entity_id: switch.sirinkuraito
+        action: switch.turn_on
+        data: {}
+    - alias: 3ボタン ダブルクリック
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action in [''3_hold'', ''3_double'']
+          }}'
+      sequence:
+      - alias: シーリングライト OFF
+        target:
+          entity_id: switch.sirinkuraito
+        action: switch.turn_off
+        data: {}
+    - alias: 4ボタン シングルクリック
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action == ''4_single'' }}'
+      sequence:
+      - alias: エアコン ON
+        target:
+          entity_id: switch.2f_he_shi_eakon
+        action: switch.turn_on
+        data: {}
+      - alias: エアコン状態読み上げ
+        action: tts.speak
+        target:
+          entity_id: tts.google_translate_en_com
+        data:
+          cache: true
+          language: ja
+          media_player_entity_id: media_player.er_jie_he_shi_2
+          message: "      {{\n        [\n          \"現在のエアコンのモードは \" ~\n          states('climate.2f_he_shi_eakon')
+            | replace('heat_cool', '自動') | replace('cool', '冷房') | replace('heat',
+            '暖房') | replace('dry', '除湿') | replace('fan_only', '送風'),\n          \"設定温度は
+            \" ~ state_attr('climate.2f_he_shi_eakon', 'temperature') | round(0) ~
+            \" 度\",\n          \"風量は \" ~ state_attr('climate.2f_he_shi_eakon', 'fan_mode')
+            | replace('auto', '自動') | replace('low', '弱') | replace('medium', '中')
+            | replace('high', '強')\n        ] | join(\"、\")\n      }}"
+    - alias: 4ボタン ダブルクリック
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action in [''4_hold'', ''4_double'']
+          }}'
+      sequence:
+      - alias: エアコン OFF
+        target:
+          entity_id: switch.2f_he_shi_eakon
+        action: switch.turn_off
+        data: {}
+  mode: queued
+  max: 10
+- id: '1751010216696'
+  alias: Save IR code to file
+  description: ''
+  triggers:
+  - topic: zigbee2mqtt/ir_blaster_wsroom
+    trigger: mqtt
+  conditions:
+  - condition: template
+    value_template: '{{ ''learned_ir_code'' in trigger.payload_json }}'
+  actions:
+  - action: notify.send_message
+    metadata: {}
+    data:
+      message: '{{ trigger.payload_json. learned_ir_code }}'
+    target:
+      entity_id: notify.file
+- id: '1751113192709'
+  alias: FP1 region イベント通知
+  description: FP1のregionアクションを検出してスマホに通知
+  triggers:
+  - topic: zigbee2mqtt/mmwave_livingroom_1f/action
+    trigger: mqtt
+  conditions:
+  - condition: template
+    value_template: '{{ trigger.payload.startswith(''region_'') }}
+
+      '
+  actions:
+  - action: input_text.set_value
+    target:
+      entity_id: input_text.last_fp1_region_event
+    data:
+      value: '{{ now().strftime(''%H:%M:%S'') }} - {{trigger.payload.replace(''region_'',
+        ''Region '') .replace(''_enter'', '' に入りました'') .replace(''_leave'', '' から出ました'')
+        .replace(''_occupied'', '' が占有されました'') .replace(''_unoccupied'', '' が空きました'')
+        }}
+
+        '
+  - action: notify.mobile_app_iphone_12mini_a2398
+    data:
+      title: FP1 region 通知
+      message: '{{ states(''input_text.last_fp1_region_event'') }}'
+    enabled: false
+  mode: queued
+- id: '1751619262398'
+  alias: AC電流によるON/OFF判定
+  description: ''
+  triggers:
+  - entity_id: sensor.test_aircon_ac_current_2
+    above: 0.1
+    trigger: numeric_state
+  - entity_id: sensor.test_aircon_ac_current_2
+    below: 0.01
+    trigger: numeric_state
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: numeric_state
+        entity_id: sensor.test_aircon_ac_current_2
+        above: 0.1
+      sequence:
+      - target:
+          entity_id: input_boolean.ac_2f_wsroom
+        action: input_boolean.turn_on
+        data: {}
+    - conditions:
+      - condition: numeric_state
+        entity_id: sensor.test_aircon_ac_current_2
+        below: 0.01
+      sequence:
+      - target:
+          entity_id: input_boolean.ac_2f_wsroom
+        action: input_boolean.turn_off
+        data: {}
+  mode: single
+- id: '1751868546459'
+  alias: ドア自動ロック
+  description: 'ドアが閉まったとき、鍵が解除されたとき、または深夜1時にこのオートメーションが実行されます。 その後、1分間ドアが開かないことを確認し、
+    かつ現在もドアが閉まっていて鍵が開いており、 ロック用センサー（lock_kitchen_contact）がON（＝解錠中）のとき、自動的に施錠します。
+
+    '
+  triggers:
+  - entity_id: binary_sensor.lock_kitchen_contact
+    to: 'on'
+    trigger: state
+  - entity_id: binary_sensor.contact_sensor_9b43_2
+    to: 'off'
+    trigger: state
+  - at: 01:00:00
+    trigger: time
+  conditions: []
+  actions:
+  - wait_for_trigger:
+    - entity_id: binary_sensor.contact_sensor_9b43_2
+      to: 'on'
+      trigger: state
+    timeout: 00:01:00
+    continue_on_timeout: true
+  - condition: state
+    entity_id: binary_sensor.contact_sensor_9b43_2
+    state: 'off'
+  - condition: state
+    entity_id: binary_sensor.lock_kitchen_contact
+    state: 'on'
+  - target:
+      entity_id: lock.lock_9dd7
+    action: lock.lock
+  mode: restart
+- id: '1751940384287'
+  alias: 温度による自動色切替
+  description: '卓上照明をZS06赤外線ブラスターで制御し、室温に応じて自動的に色を変更します。
+
+    ・30℃以上では「赤」に点灯（熱中症への注意喚起）  ・15℃以下では「青」に点灯（寒さへの注意喚起） ・28℃未満または18℃超では照明を自動オフ（快適ゾーンとみなす）
+
+    それぞれ点灯時は「ON → 白 → 色」の順に送信して確実に切り替えます。
+
+    対象時間帯は朝5:00〜夜22:00までです。
+
+    毎晩22:00には自動的に照明をオフにします。
+
+    '
+  triggers:
+  - entity_id: sensor.meter_4f04
+    trigger: state
+  - at: '22:00:00'
+    trigger: time
+  conditions:
+  - condition: time
+    after: 05:00:00
+    before: '22:00:00'
+  actions:
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ states(''sensor.meter_4f04'')|float >= 30 }}'
+      sequence:
+      - alias: 'ON'
+        data:
+          topic: zigbee2mqtt/ir_blaster_bedroom/set
+          payload: '{"ir_code_to_send":"BQkkYxE7AuAXAQGhBuAFA0AB4AcTQA/gFwFAI+ALAweZmgkk/Qg7Ag=="}'
+        action: mqtt.publish
+      - delay: 00:00:02
+      - alias: WHITE
+        data:
+          topic: zigbee2mqtt/ir_blaster_bedroom/set
+          payload: '{"ir_code_to_send":"Bf0jshE4AuAXAQGyBuAFA0AB4AcTwA/gFwHAJ+ADBwejmv0j/wg4Ag=="}'
+        action: mqtt.publish
+      - delay: 00:00:02
+      - alias: RED
+        data:
+          topic: zigbee2mqtt/ir_blaster_bedroom/set
+          payload: '{"ir_code_to_send":"BfgjsRE1AuAXAQHCBuAFA0AB4AMTwAFAE+ALAUAXQANAAUAH4AcDH3Ga+CP0CDUC///PDJ4BtACeASwE7wA1AoAAlwCXAMIGA4AANQI="}'
+        action: mqtt.publish
+      - alias: Notify RED
+        action: notify.mobile_app_iphone_12mini_a2398
+        data:
+          title: 【注意】
+          message: 父寝室の室温が30℃以上です。
+    - conditions:
+      - condition: template
+        value_template: '{{ states(''sensor.meter_4f04'')|float <= 15 }}'
+      sequence:
+      - alias: 'ON'
+        data:
+          topic: zigbee2mqtt/ir_blaster_bedroom/set
+          payload: '{"ir_code_to_send":"BQkkYxE7AuAXAQGhBuAFA0AB4AcTQA/gFwFAI+ALAweZmgkk/Qg7Ag=="}'
+        action: mqtt.publish
+      - delay: 00:00:02
+      - alias: WHITE
+        data:
+          topic: zigbee2mqtt/ir_blaster_bedroom/set
+          payload: '{"ir_code_to_send":"Bf0jshE4AuAXAQGyBuAFA0AB4AcTwA/gFwHAJ+ADBwejmv0j/wg4Ag=="}'
+        action: mqtt.publish
+      - delay: 00:00:02
+      - alias: BLUE
+        data:
+          topic: zigbee2mqtt/ir_blaster_bedroom/set
+          payload: '{"ir_code_to_send":"CzsjuhEUAngCqAF4AuADB0AL4AEDAfEGQAMDqAHxBkAHAUgBQBsB8QbgAQPgAw9AAUAP4AMDQCvAD0ALgANAT0ADDRQCv5o7I6EAbwBwCagB"}'
+        action: mqtt.publish
+      - alias: Notify BLUE
+        action: notify.mobile_app_iphone_12mini_a2398
+        data:
+          title: 【注意】
+          message: 父寝室の室温が15℃以下です。
+    - conditions:
+      - condition: or
+        conditions:
+        - condition: template
+          value_template: '{{ states(''sensor.meter_4f04'')|float < 28 }}'
+        - condition: template
+          value_template: '{{ states(''sensor.meter_4f04'')|float > 18 }}'
+      sequence:
+      - alias: 'OFF'
+        data:
+          topic: zigbee2mqtt/ir_blaster_bedroom/set
+          payload: '{"ir_code_to_send":"BfIjmRE7AuAXAQGkBuAFA0AB4AMTQAFAD+APAcAbQAfgCwMHsZryI+MIOwI="}'
+        action: mqtt.publish
+    default:
+    - alias: 'OFF'
+      data:
+        topic: zigbee2mqtt/ir_blaster_bedroom/set
+        payload: '{"ir_code_to_send":"BfIjmRE7AuAXAQGkBuAFA0AB4AMTQAFAD+APAcAbQAfgCwMHsZryI+MIOwI="}'
+      action: mqtt.publish
+  mode: single
+- id: '1752637137626'
+  alias: 振動センサー
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.0xa4c138354c2b5cbd_vibration
+    to: 'on'
+  conditions: []
+  actions:
+  - action: notify.mobile_app_iphone_12mini_a2398
+    metadata: {}
+    data:
+      message: 振動の検知
+  mode: single
+- id: '1752668346188'
+  alias: ハイハイ店番 古スナップ削除（Custom）
+  triggers:
+  - at: 04:00:00
+    trigger: time
+  actions:
+  - data:
+      folder: /config/www/snapshots/
+      time: 259200
+      only_extensions:
+      - .jpg
+      scan_subfolders: false
+      remove_subfolders: false
+      size: 0
+      no_warn: true
+    action: delete.files_in_folder
+  mode: single
+- id: '1753186062434'
+  alias: スプリンクラー自動制御
+  description: "\n- 毎時30分ごとに起動。   - 時間帯によって温度条件を切替（昼: 28度〜、夜: 23度〜）。   - 湿度90%以上ならスキップ。
+    \  - 1時間後の天気予報において以下が1つでも該当する場合はスキップ：\n  - precipitation > 0\n  - condition が
+    'rainy', 'pouring', 'lightning-rainy', 'snowy-rainy'\n  - wind_speed > 10 km/h\n-
+    散水状況を input_select.sprinkler_status に記録。   - 散水ログをinput_text.sprinkler_logに記録。
+    \  - 12:00〜13:00の間は動作しない。(お弁当などの配達に来てもらっているので)\n"
+  triggers:
+  - trigger: time_pattern
+    minutes: /30
+  conditions:
+  - condition: not
+    conditions:
+    - condition: time
+      after: '12:00:00'
+      before: '13:00:00'
+  actions:
+  - alias: 天気予報取得
+    data:
+      type: hourly
+    response_variable: weather
+    action: weather.get_forecasts
+    target:
+      entity_id: weather.forecast_zi_zhai
+  - alias: 昼・夜の条件分岐と散水制御
+    choose:
+    - conditions:
+      - condition: time
+        after: 09:00:00
+        before: '19:00:00'
+      - condition: numeric_state
+        entity_id: sensor.indoor_outdoor_meter_655c
+        above: 28
+      - condition: numeric_state
+        entity_id: sensor.indoor_outdoor_meter_655c_humidity
+        below: 90
+      - condition: template
+        value_template: "{% set hourly = weather['weather.forecast_zi_zhai'].forecast
+          %} {{ hourly and\n   (hourly[0].precipitation | float(0)) == 0 and\n   hourly[0].condition
+          not in ['rainy', 'pouring', 'lightning-rainy', 'snowy-rainy'] and\n   (hourly[0].wind_speed
+          | float(0)) <= 15.0 }}\n"
+      sequence:
+      - data:
+          entity_id: input_select.sprinkler_status
+          option: 散水中（昼）
+        action: input_select.select_option
+      - data:
+          entity_id: input_text.sprinkler_log
+          value: '{{ now().strftime(''%Y-%m-%d %H:%M'') }} 散水（昼）: {{ states(''sensor.indoor_outdoor_meter_655c'')
+            }}°C, {{ states(''sensor.indoor_outdoor_meter_655c_humidity'') }}%
+
+            '
+        action: input_text.set_value
+      - entity_id: switch.1stfactory_1f_sprinkler_1stfactory
+        action: switch.turn_on
+      - delay: 00:02:00
+      - entity_id: switch.1stfactory_1f_sprinkler_1stfactory
+        action: switch.turn_off
+      - entity_id: switch.1stfactory_1f_sprinkler_2ndfactory
+        action: switch.turn_on
+        enabled: false
+      - delay: 00:01:00
+        enabled: false
+      - entity_id: switch.1stfactory_1f_sprinkler_2ndfactory
+        action: switch.turn_off
+        enabled: false
+      - data:
+          entity_id: input_select.sprinkler_status
+          option: 完了（昼）
+        action: input_select.select_option
+    - conditions:
+      - condition: or
+        conditions:
+        - condition: time
+          before: 09:00:00
+        - condition: time
+          after: '19:00:00'
+      - condition: numeric_state
+        entity_id: sensor.indoor_outdoor_meter_655c
+        above: 25
+      - condition: numeric_state
+        entity_id: sensor.indoor_outdoor_meter_655c_humidity
+        below: 90
+      - condition: template
+        value_template: "{% set hourly = weather['weather.forecast_zi_zhai'].forecast
+          %} {{ hourly and\n   (hourly[0].precipitation | float(0)) == 0 and\n   hourly[0].condition
+          not in ['rainy', 'pouring', 'lightning-rainy', 'snowy-rainy'] and\n   (hourly[0].wind_speed
+          | float(0)) <= 15.0 }}\n"
+      sequence:
+      - data:
+          entity_id: input_select.sprinkler_status
+          option: 散水中（夜）
+        action: input_select.select_option
+      - data:
+          entity_id: input_text.sprinkler_log
+          value: '{{ now().strftime(''%Y-%m-%d %H:%M'') }} 散水（夜）: {{ states(''sensor.indoor_outdoor_meter_655c'')
+            }}°C, {{ states(''sensor.indoor_outdoor_meter_655c_humidity'') }}%
+
+            '
+        action: input_text.set_value
+      - entity_id: switch.1stfactory_1f_sprinkler_1stfactory
+        action: switch.turn_on
+      - delay: 00:01:00
+      - entity_id: switch.1stfactory_1f_sprinkler_1stfactory
+        action: switch.turn_off
+      - entity_id: switch.1stfactory_1f_sprinkler_2ndfactory
+        action: switch.turn_on
+        enabled: false
+      - delay: 00:01:00
+        enabled: false
+      - entity_id: switch.1stfactory_1f_sprinkler_2ndfactory
+        action: switch.turn_off
+        enabled: false
+      - data:
+          entity_id: input_select.sprinkler_status
+          option: 完了（夜）
+        action: input_select.select_option
+    default:
+    - data:
+        entity_id: input_select.sprinkler_status
+        option: スキップ
+      action: input_select.select_option
+    - data:
+        entity_id: input_text.sprinkler_log
+        value: '{{ now().strftime(''%Y-%m-%d %H:%M'') }} スキップ（条件未達）: {{ states(''sensor.indoor_outdoor_meter_655c'')
+          }}°C, {{ states(''sensor.indoor_outdoor_meter_655c_humidity'') }}%
+
+          '
+      action: input_text.set_value
+  mode: restart
+- id: '1754037367204'
+  alias: 特定のダッシュボードを表示し、指定秒数後に最初に表示されていた画面に戻る
+  description: ''
+  triggers:
+  - entity_id: binary_sensor.motion_sensor_entrance
+    to: 'on'
+    trigger: state
+  conditions: []
+  actions:
+  - alias: スクリーンセーバーをストップする
+    action: rest_command.fully_stop_screensaver
+    data:
+      ip: 192.168.1.113
+      password: admin
+  - alias: 音量調整する
+    action: rest_command.fully_set_volume
+    data:
+      ip: 192.168.1.113
+      level: 60
+      stream: 4
+      password: admin
+  - alias: 音量調整が反映されるまで1秒待機する
+    delay:
+      hours: 0
+      minutes: 0
+      seconds: 1
+      milliseconds: 0
+  - alias: 音を鳴らす
+    action: rest_command.fully_play_alert_sound_plain
+    data:
+      ip: 192.168.1.113
+      url: http://192.168.1.201:8123/local/sounds/coin.mp3
+      stream: 4
+      password: admin
+  - alias: タブのフォーカスを変更する
+    action: rest_command.fully_fucus_tab
+    data:
+      ip: 192.168.1.113
+      tab: '0'
+      password: admin
+  - alias: 切り替えたタブを設定秒数の間、表示する
+    delay:
+      hours: 0
+      minutes: 0
+      seconds: 30
+      milliseconds: 0
+  - alias: スタートページに戻る
+    action: rest_command.fully_load_start_url
+    data:
+      ip: 192.168.1.113
+      password: admin
+  mode: single
+- id: '1754057647105'
+  alias: youtubeの再生
+  description: ''
+  triggers: []
+  conditions: []
+  actions:
+  - action: media_player.play_media
+    target:
+      entity_id: media_player.er_jie_yang_shi
+    data:
+      media:
+        media_content_id: '{ "app_name": "youtube", "media_id": "WTxgXQsqdyA" }'
+        media_content_type: cast
+        metadata: {}
+  mode: single
+- id: '1755685794955'
+  alias: テスト 自動遷移
+  description: ''
+  triggers:
+  - trigger: zone
+    entity_id: device_tracker.iphone_12mini_a2398
+    zone: zone.home
+    event: enter
+  conditions: []
+  actions: []
+  mode: single
+- id: '1755750437180'
+  alias: テスト オートメーション再起動
+  description: ''
+  triggers:
+  - trigger: event
+    event_type: timer.finished
+    event_data:
+      entity_id: timer.auto_off_snooze
+  conditions: []
+  actions:
+  - action: notify.mobile_app_iphone_12mini_a2398
+    data:
+      message: test
+    enabled: false
+  - action: automation.turn_on
+    metadata: {}
+    data: {}
+    enabled: false
+    target:
+      entity_id: automation.acdian_liu_niyoruon_offpan_ding
+  mode: single
+- id: '1758333680242'
+  alias: 水漏れ検知でポンプ制御
+  description: 除湿機の水漏れセンサーに応じてポンプを制御する（定期チェック付き）
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.leak_detector_3f34
+    to: 'on'
+    for:
+      seconds: 10
+    id: water_on
+  - trigger: state
+    entity_id: binary_sensor.leak_detector_3f34
+    to: 'off'
+    for:
+      seconds: 5
+    id: water_off
+  - trigger: homeassistant
+    event: start
+    id: startup
+  - trigger: time_pattern
+    id: periodic_check
+    hours: /1
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: or
+        conditions:
+        - condition: trigger
+          id: water_on
+        - condition: and
+          conditions:
+          - condition: trigger
+            id: periodic_check
+          - condition: state
+            entity_id: binary_sensor.leak_detector_3f34
+            state: 'on'
+      - condition: state
+        entity_id: switch.plug_mini_jp_3f46
+        state: 'off'
+      sequence:
+      - action: switch.turn_on
+        target:
+          entity_id: switch.plug_mini_jp_3f46
+      - delay:
+          seconds: 10
+      - action: switch.turn_off
+        target:
+          entity_id: switch.plug_mini_jp_3f46
+    - conditions:
+      - condition: or
+        conditions:
+        - condition: trigger
+          id: water_off
+        - condition: and
+          conditions:
+          - condition: trigger
+            id: periodic_check
+          - condition: state
+            entity_id: binary_sensor.leak_detector_3f34
+            state: 'off'
+      - condition: state
+        entity_id: switch.plug_mini_jp_3f46
+        state: 'on'
+      sequence:
+      - action: switch.turn_off
+        target:
+          entity_id: switch.plug_mini_jp_3f46
+    - conditions:
+      - condition: trigger
+        id: startup
+      sequence:
+      - action: switch.turn_off
+        target:
+          entity_id: switch.plug_mini_jp_3f46
+        data: {}
+  mode: single
+- id: '1759883676292'
+  alias: Fire TV テスト
+  description: ''
+  triggers: []
+  conditions: []
+  actions:
+  - action: media_player.turn_on
+    metadata: {}
+    data: {}
+    target:
+      entity_id:
+      - media_player.fire_tv_192_168_1_145
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 3
+      milliseconds: 0
+  - action: androidtv.adb_command
+    metadata: {}
+    data:
+      command: am start -a android.intent.action.VIEW -d "dashboard-pi/info2"
+    target:
+      entity_id:
+      - media_player.fire_tv_192_168_1_145
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 3
+      milliseconds: 0
+  - action: androidtv.adb_command
+    metadata: {}
+    data:
+      command: MENU
+    target:
+      entity_id:
+      - media_player.fire_tv_192_168_1_145
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 1
+      milliseconds: 0
+  - action: androidtv.adb_command
+    metadata: {}
+    data:
+      command: HOME
+    target:
+      entity_id:
+      - media_player.fire_tv_192_168_1_145
+  - action: androidtv.adb_command
+    metadata: {}
+    data:
+      command: am start -n de.ozerov.fully/.MainActivity
+    target:
+      entity_id:
+      - media_player.fire_tv_192_168_1_145
+  mode: single
+- id: '1761357362220'
+  alias: 1階台所
+  description: ''
+  triggers:
+  - topic: zigbee2mqtt/controller_dashboard_kitchen
+    trigger: mqtt
+  conditions:
+  - condition: template
+    value_template: '{{ trigger.payload_json.action is defined }}'
+  actions:
+  - choose:
+    - alias: 1_single
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action == ''1_single'' }}'
+      sequence:
+      - alias: 画面ON
+        sequence:
+        - action: mqtt.publish
+          data:
+            evaluate_payload: false
+            qos: 0
+            retain: false
+            topic: rpi/window/cmd
+            payload: screen_on
+    - alias: 2_single
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action == ''2_single'' }}'
+      sequence:
+      - alias: 画面OFF
+        sequence:
+        - action: mqtt.publish
+          data:
+            evaluate_payload: false
+            qos: 0
+            retain: false
+            topic: rpi/window/cmd
+            payload: screen_off
+    - alias: 2_hold, 2_double
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action in [''2_hold'', ''2_double'']
+          }}'
+      sequence: []
+    - alias: 3_single
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action == ''3_single'' }}'
+      sequence: []
+    - alias: 3_hold, 3_double
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action in [''3_hold'', ''3_double'']
+          }}
+
+          '
+      sequence: []
+    - alias: 4_single
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action == ''4_single'' }}'
+      sequence: []
+    - alias: 4_hold, 4_double
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.payload_json.action in [''4_hold'', ''4_double'']
+          }}'
+      sequence: []
+    enabled: true
+  mode: single

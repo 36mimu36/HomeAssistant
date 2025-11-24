@@ -1,0 +1,12 @@
+# ゴミ出しの種類
+- sensor:
+  - name: tonight_garbage_type
+    state: >-
+      {% set weekday = now().weekday() %}
+      {% if weekday == 6 %} プラ
+      {% elif weekday == 1 %} 燃えるゴミ
+      {% elif weekday == 2 %} 瓶/缶/ダンボール/布/金物
+      {% elif weekday == 4 %} 燃えるゴミ/乾電池
+      {% else %} ゴミ出しなし
+      {% endif %}
+    icon: mdi:trash-can

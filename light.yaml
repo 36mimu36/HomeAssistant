@@ -1,0 +1,14 @@
+
+- platform: smartir
+  name: livingroom_light
+  unique_id: livingroom_light
+  device_code: 1001
+  controller_data: zigbee2mqtt/ir_blaster_living/set
+  power_sensor: input_boolean.light_1f_livingroom
+
+- platform: smartir
+  name: wsroom_light
+  unique_id: wsroom_light
+  device_code: 2001
+  controller_data: zigbee2mqtt/ir_blaster_wsroom/set
+

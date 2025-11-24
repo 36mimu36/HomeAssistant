@@ -1,0 +1,63 @@
+esphome:
+  name: 1stfactory-1f-sprinkler
+  friendly_name: 1stFactory-1F-Sprinkler
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+# ✅ ログ出力（シリアルとOTAログに使用）
+logger:
+
+# ✅ Home Assistant API連携
+api:
+  encryption:
+    key: "t1q49v9l2Q0xK7nloJQg5U4t4Ae5T20jfIDdhv2pLA0="
+
+# ✅ OTAアップデート
+ota:
+  - platform: esphome
+    password: "cdf908257fdc9582ac76e0b0cc08ceba"
+
+# ✅ Wi-Fi設定（失敗時はAPモード起動）
+wifi:
+  ssid: !secret wifi_ssid_1stfactory-1f-1st
+  password: !secret wifi_password_1stfactory-1f-1st
+
+  ap:
+    ssid: "1Stfactory-1F-Sprinkler"
+    password: "uiO8fcj6lSy5"
+
+# ✅ 状態LED（省略可能、デバッグ用）
+status_led:
+  pin: GPIO2
+
+# ✅ スプリンクラー制御用スイッチ（自動オフ・安全設計付き）
+switch:
+  - platform: gpio
+    id: valve_1st_factory
+    pin: GPIO25
+    name: "1stFactory"
+    restore_mode: ALWAYS_OFF  # 電源復旧時に自動でオンにならない
+    on_turn_on:
+      - logger.log: "1stFactory valve turned ON"
+      - delay: 3min
+      - switch.turn_off: valve_1st_factory
+    on_turn_off:
+      - logger.log: "1stFactory valve turned OFF"
+
+  - platform: gpio
+    id: valve_2nd_factory
+    pin: GPIO27
+    name: "2ndFactory"
+    restore_mode: ALWAYS_OFF
+    on_turn_on:
+      - logger.log: "2ndFactory valve turned ON"
+      - delay: 3min
+      - switch.turn_off: valve_2nd_factory
+    on_turn_off:
+      - logger.log: "2ndFactory valve turned OFF"
+
+# ✅ 万一Wi-Fiに繋がらなかったときのローカル接続用
+captive_portal:

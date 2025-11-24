@@ -1,0 +1,60 @@
+esphome:
+  name: 1sthome-1f-alertlight
+  friendly_name: 1stHome-1F-AlertLight
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "QKWUqprrX5hNh64I9mczMm57C5/KPxCYE0mPemlP8kY="
+
+ota:
+  - platform: esphome
+    password: "2d1da470e095b24ca0901ddeb9d47bd0"
+
+wifi:
+  ssid: !secret wifi_ssid_1sthome-1f-1st
+  password: !secret wifi_password_1sthome-1f-1st
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "1Sthome-1F-Alertlight"
+    password: "zuwbzFKYB0Jn"
+
+esp32_ble_tracker:
+  scan_parameters:
+    interval: 1100ms
+    window: 1100ms
+    active: true
+
+bluetooth_proxy:
+  active: true
+
+# 出力ピン定義（リレー制御ピン）を追加
+output:
+  - platform: gpio
+    pin: GPIO14  # 実際に使用するピン番号に置き換えてください
+    id: relay_output
+
+# スイッチ定義（5秒後に自動でオフ）
+switch:
+  - platform: template
+    name: "Alert Buzzer Pulse"
+    id: relay_switch
+    turn_on_action:
+      - output.turn_on: relay_output
+      - delay: 5s
+      - output.turn_off: relay_output
+    turn_off_action:
+      - output.turn_off: relay_output
+    restore_mode: always_off
+
+captive_portal:
+    

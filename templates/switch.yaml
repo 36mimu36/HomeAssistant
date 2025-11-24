@@ -1,0 +1,33 @@
+# switch.kotatsu_1f_livingroom
+# 1F 居間 こたつ
+- switch:
+  - name: "Kotatsu 1F Livingroom"
+    unique_id: kotatsu_1f_livingroom
+    optimistic: true
+    turn_on:
+      - service: mqtt.publish
+        data:
+          topic: zigbee2mqtt/ir_blaster_living/set
+          payload: '{"ir_code_to_send":"B1MKUwoHA6MDgAMCxgcH4AQDwBcH4tVTClMKBwPAD+A0JwIDBwM="}'
+    turn_off:
+      - service: mqtt.publish
+        data:
+          topic: zigbee2mqtt/ir_blaster_living/set
+          payload: '{"ir_code_to_send":"DVYKVgoIA6ADCAPBBwgDQAdAA8ALQAdAAwf61VYKVgoIA+ADG+ADC0AjQAPgHCcCBwgD"}'
+
+# switch.kotatsu_2f_jsroom
+# 2F 和室 こたつ
+- switch:
+  - name: "Kotatsu 2F Jsroom"
+    unique_id: kotatsu_2f_jsroom
+    optimistic: true
+    turn_on:
+      - service: mqtt.publish
+        data:
+          topic: zigbee2mqtt/ir_blaster_jsroom_01/set
+          payload: '{"ir_code_to_send":"BVwKXApLA8ABAZoH4AUDwAEHGNZcClwKSwPAAeA0JwIDSwM="}'
+    turn_off:
+      - service: mqtt.publish
+        data:
+          topic: zigbee2mqtt/ir_blaster_jsroom_01/set
+          payload: '{"ir_code_to_send":"BUcKRwpKA0ABA6UHSgPAAcALQAdAAwcp1kcKRwpKA0ABQA/AAcALQAdAA+AcJwIHSgM="}'
