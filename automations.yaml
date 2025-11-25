@@ -150,53 +150,12 @@
       seconds: 0
   conditions: []
   actions:
-  - choose:
-    - conditions:
-      - condition: time
-        after: '17:00:00'
-        before: '23:00:00'
-      sequence:
-      - response_variable: rest_response
-        action: rest_command.1f_kitchen_lighting_dim_mode
-        data: {}
-      - condition: template
-        value_template: '{{ rest_response.status_code == 200 }}'
-      - data:
-          message: "\U0001F319 夜のアクション実行: キッチン照明を暗くしました"
-        action: notify.mobile_app_iphone_12mini_a2398
-        enabled: false
-      - condition: template
-        value_template: '{{ rest_response.status_code != 200 }}'
-      - data:
-          message: '⚠️ RESTエラー: キッチン照明の調光コマンドが失敗しました（コード: {{ rest_response.status_code
-            }}）'
-        action: notify.mobile_app_iphone_12mini_a2398
-        enabled: false
-    default:
-    - response_variable: rest_response
-      action: rest_command.1f_kitchen_lighting_off
-      data: {}
-    - condition: template
-      value_template: '{{ rest_response.status_code == 200 }}'
-    - data:
-        message: "\U0001F31E 昼のアクション実行: キッチン照明をオフにしました"
-      action: notify.mobile_app_iphone_12mini_a2398
-      enabled: false
-    - condition: template
-      value_template: '{{ rest_response.status_code != 200 }}'
-    - data:
-        message: '⚠️ RESTエラー: キッチン照明のオフコマンドが失敗しました（コード: {{ rest_response.status_code
-          }}）'
-      action: notify.mobile_app_iphone_12mini_a2398
-      enabled: false
-  - condition: template
-    value_template: '{{ rest_response.status_code == 200 }}'
-    enabled: false
-  - data:
-      message: "✅ キッチンオートメーション完了: - 最終の人感センサー検知から30分経過 - 実行アクション: {{\n    \"照明オフ\"
-        if now().hour >= 23 or now().hour < 17 else \"照明を暗く\"\n  }} に変更\n"
-    action: notify.mobile_app_iphone_12mini_a2398
-    enabled: false
+  - alias: 照明 OFF
+    action: light.turn_off
+    metadata: {}
+    data: {}
+    target:
+      entity_id: light.kitchen_light
   - alias: ダッシュボード OFF
     action: mqtt.publish
     data:
@@ -246,28 +205,12 @@
     id: contact_sensor
     trigger: state
   actions:
-  - response_variable: rest_response
-    action: rest_command.1f_kitchen_lighting_on
+  - alias: 照明 ON
+    action: light.turn_on
+    metadata: {}
     data: {}
-  - choose:
-    - conditions:
-      - condition: template
-        value_template: '{{ rest_response.status == 200 }}'
-      sequence:
-      - data:
-          message: '✅ キッチン照明を点灯しました （トリガー: {{ ''人感センサー'' if trigger.id==''motion_sensor''
-            else ''開閉センサー'' }}）'
-        action: notify.mobile_app_iphone_12mini_a2398
-        enabled: false
-    - conditions:
-      - condition: template
-        value_template: '{{ rest_response.status != 200 }}'
-      sequence:
-      - data:
-          message: '⚠️ キッチン照明ONのリクエストが失敗しました （コード: {{ rest_response.status }} | トリガー:
-            {{ ''人感センサー'' if trigger.id==''motion_sensor'' else ''開閉センサー'' }}）'
-        action: notify.mobile_app_iphone_12mini_a2398
-        enabled: false
+    target:
+      entity_id: light.kitchen_light
   - alias: ダッシュボード ON
     action: mqtt.publish
     data:

@@ -99,28 +99,36 @@
 
 # 1F キッチン 照明
 - light:
-  - name: "kitchen_light"
-    unique_id: kitchen_light
-    
-    turn_on:
-      - service: mqtt.publish
-        data:
-          topic: zigbee2mqtt/ir_blaster_kitchen/set
-          payload: '{"B30NDwd4AfEBQAMEnwFRBXggAwOfAZ8BgAcD8QF4AYADA58BUQXgBwtAEwCfIAUHeAFRBXgB8QGAA+ABCwWfAfEBeAHgAQMBnwFAG0ADgAsAn2AHQAEBUQVAEwl4AVEFnwGfAXgB4AcLAf//4AOnAXgBQCcFUQV4AfEBwAeAC0AHwBcBnwFACwGfAeABE0APA3gB8QHgBRPAD0AHQAEG8QF4AVEFnyADA3gB8QFABwGfAUAHQAMBUQXAE0AHgAPgAQsDnwH//0CnDJ8BnwF4AfEBeAFRBZ8gAwF4AYALQAcAn2ABA/EBeAGADwF4AUADwAsFUQWfAZ8BgAdAF0ADgBNAAQd4AfEBnwHxAUAHgAMBUQVAA4ATA1EFeAFAFwCfIAEDUQWfAUALBlEFeAHxAZ8gAQ14AVEFnwHxAXgB8QF4AQ=="}'
-              
-    turn_off:
-      # 6時~17時の場合
-      - condition: template
-        value_template: "{{ 6 <= now().hour < 17 }}"
-      - service: mqtt.publish
-        data:
-          topic: zigbee2mqtt/ir_blaster_kitchen/set
-          payload: '{"CsoN4AaqAaoB3wGqIAEBGQWAA0ABARkFgBMBqgGABwMZBaoBwAGACwHfAeAHB+ADE0ALAKpgAQHfAeABJ+ADCwWqAaoB3wGAA0ABAd8B4AMT4AMLAf//4AenBd8BGQWqAUABwAcEqgHfAaogAYAP4AMLAaoBwBOAB4ABgAsC3wGq4AABAd8BgBMBqgFAB0ADAaoBwBMC3wGq4AIBgBtAAQ3fARkFqgGqAaoBqgHfAQ=="}'
+    - name: "kitchen_light"
+      unique_id: kitchen_light
+
+      turn_on:
+        - action: mqtt.publish
+          data:
+            topic: zigbee2mqtt/ir_blaster_kitchen/set
+            payload: '{"ir_code_to_send":"B30NDwd4AfEBQAMEnwFRBXggAwOfAZ8BgAcD8QF4AYADA58BUQXgBwtAEwCfIAUHeAFRBXgB8QGAA+ABCwWfAfEBeAHgAQMBnwFAG0ADgAsAn2AHQAEBUQVAEwl4AVEFnwGfAXgB4AcLAf//4AOnAXgBQCcFUQV4AfEBwAeAC0AHwBcBnwFACwGfAeABE0APA3gB8QHgBRPAD0AHQAEG8QF4AVEFnyADA3gB8QFABwGfAUAHQAMBUQXAE0AHgAPgAQsDnwH//0CnDJ8BnwF4AfEBeAFRBZ8gAwF4AYALQAcAn2ABA/EBeAGADwF4AUADwAsFUQWfAZ8BgAdAF0ADgBNAAQd4AfEBnwHxAUAHgAMBUQVAA4ATA1EFeAFAFwCfIAEDUQWfAUALBlEFeAHxAZ8gAQ14AVEFnwHxAXgB8QF4AQ=="}'
       
-      # 17時~翌6時の場合
-      - condition: template
-        value_template: "{{ now().hour >= 17 or now().hour < 6 }}"
-      - service: mqtt.publish
-        data:
-          topic: zigbee2mqtt/ir_blaster_kitchen/set
-          payload: '{"BdQN0Aa0AcABARkFgAMDtAHeAUAL4AMB4AMPwAvgBwdAAcATgAEC3gG0IAFAE+ADA0ABQA/gAwFAD0ADgDEBtAFAC8ABAf//4A+nAbQB4AMnQAEBGQXAQQW0ARkFtAFADQEZBUAFAbQBwAdAAQMZBbQB4AcBQBPgAwNAAUAP4AMBQA9AA4BRDbQBGQW0AbQBtAG0AbQB"}'
+      turn_off:
+        # 5時~17時の場合
+        - condition: template
+          value_template: "{{ 5 <= now().hour < 17 }}"
+        - action: mqtt.publish
+          data:
+            topic: zigbee2mqtt/ir_blaster_kitchen/set
+            payload: '{"ir_code_to_send":"BdQN0Aa0AcABARkFgAMDtAHeAUAL4AMB4AMPwAvgBwdAAcATgAEC3gG0IAFAE+ADA0ABQA/gAwFAD0ADgDEBtAFAC8ABAf//4A+nAbQB4AMnQAEBGQXAQQW0ARkFtAFADQEZBUAFAbQBwAdAAQMZBbQB4AcBQBPgAwNAAUAP4AMBQA9AA4BRDbQBGQW0AbQBtAG0AbQB"}'
+
+        # 17時~23時の場合
+        - condition: template
+          value_template: "{{ 17 <= now().hour < 23 }}"
+        - action: mqtt.publish
+          data:
+            topic: zigbee2mqtt/ir_blaster_kitchen/set
+            payload: '{"ir_code_to_send":"CsoN4AaqAaoB3wGqIAEBGQWAA0ABARkFgBMBqgGABwMZBaoBwAGACwHfAeAHB+ADE0ALAKpgAQHfAeABJ+ADCwWqAaoB3wGAA0ABAd8B4AMT4AMLAf//4AenBd8BGQWqAUABwAcEqgHfAaogAYAP4AMLAaoBwBOAB4ABgAsC3wGq4AABAd8BgBMBqgFAB0ADAaoBwBMC3wGq4AIBgBtAAQ3fARkFqgGqAaoBqgHfAQ=="}'
+        
+        # 23時~翌6時の場合
+        - condition: template
+          value_template: "{{ now().hour >= 23 or now().hour < 6 }}"
+        - action: mqtt.publish
+          data:
+            topic: zigbee2mqtt/ir_blaster_kitchen/set
+            payload: '{"ir_code_to_send":"BdQN0Aa0AcABARkFgAMDtAHeAUAL4AMB4AMPwAvgBwdAAcATgAEC3gG0IAFAE+ADA0ABQA/gAwFAD0ADgDEBtAFAC8ABAf//4A+nAbQB4AMnQAEBGQXAQQW0ARkFtAFADQEZBUAFAbQBwAdAAQMZBbQB4AcBQBPgAwNAAUAP4AMBQA9AA4BRDbQBGQW0AbQBtAG0AbQB"}'
