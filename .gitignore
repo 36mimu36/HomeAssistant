@@ -44,3 +44,5 @@ Thumbs.db
 zigbee2mqtt/
 
 home-assistant_v2.*
+
+.storage/
