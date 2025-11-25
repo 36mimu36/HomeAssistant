@@ -97,6 +97,7 @@
   - condition: time
     after: '23:00:00'
     before: 07:00:00
+    enabled: false
   - condition: numeric_state
     entity_id: sensor.meter_f094
     below: 15
@@ -585,6 +586,8 @@
   - trigger: state
     entity_id:
     - binary_sensor.fire_alarm_contact
+    from:
+    - 'off'
     to:
     - 'on'
     id: alarm_recovered
