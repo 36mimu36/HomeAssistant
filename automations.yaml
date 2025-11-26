@@ -56,7 +56,7 @@
           milliseconds: 0
   mode: restart
 - id: '1737936056231'
-  alias: ストーブ_ONOFF
+  alias: '[climate] ストーブ_ONOFF'
   description: '【動作概要】 室温に応じてストーブを自動ON/OFF制御。
 
     【ONの条件】 ・室温が15℃以下 ・プラグの消費電力が3W以下（ストーブ未稼働時） → プラグON → 10秒後 → ボットスイッチON
@@ -584,7 +584,7 @@
       mode: default
   mode: single
 - id: '1742360888818'
-  alias: 火災報知器アラーム（繰り返し）
+  alias: '[alert]火災報知器アラーム'
   description: "移報接点が一定時間以上作動している場合、繰り返し警告を実施。 \nノーマルクローズ接点のため、火災報知器作動時は\"off\"状態になります。\n"
   triggers:
   - trigger: state
