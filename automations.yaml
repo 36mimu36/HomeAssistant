@@ -57,72 +57,73 @@
   mode: restart
 - id: '1737936056231'
   alias: ストーブ_ONOFF
-  description: '温湿度計のセンサー値が14度未満になった場合にストーブをオンにし、センサー値の変化に応じて安全にオフ操作を実行するオートメーション。
-
-
-    ● 安全機能:
-
-    - 温度が16度以上になったら自動停止
-
-    - 最大稼働時間4時間（過熱防止）
-
-    - センサー異常検知（unavailableまたはunknown）
-
-    - 5分ごとに安全条件をチェック
-
-    - 手動停止の検知
-
-
-    ● 動作フロー:
-
-    1. ストーブのプラグをON
-
-    2. 2分後に着火確認（電力5W未満ならボタンで点火）
-
-    3. 5分ごとに安全チェック（最大48回 = 4時間）
-
-    4. 安全条件を満たさなくなったら即座に停止
-
-    5. 4時間経過後は自動停止
-
-    '
+  description: 温度に応じてストーブを自動ON/OFF
   triggers:
   - entity_id:
     - sensor.meter_f094
     below: 15
     trigger: numeric_state
+    id: temp_low
+  - entity_id:
+    - sensor.meter_f094
+    above: 17
+    trigger: numeric_state
+    id: temp_high
   - trigger: time_pattern
     minutes: /30
+    id: periodic
   conditions:
   - condition: time
     after: '23:00:00'
     before: 07:00:00
     enabled: false
-  - condition: numeric_state
-    entity_id: sensor.meter_f094
-    below: 15
-  - condition: numeric_state
-    entity_id: sensor.plug_mini_jp_41de_power
-    below: 3
   actions:
-  - target:
-      entity_id: switch.plug_mini_jp_41de
-    action: switch.turn_on
-    data: {}
-  - delay:
-      hours: 0
-      minutes: 0
-      seconds: 10
-      milliseconds: 0
-  - action: switch.turn_on
-    metadata: {}
-    data: {}
-    target:
-      entity_id: switch.bot_354b
-  - data:
-      message: "\U0001F525 ストーブのプラグをオンにしました。（{{ now().strftime('%H:%M:%S') }}）\n室温:
-        {{ states('sensor.meter_f094') }}℃"
-    action: notify.mobile_app_iphone_12mini_a2398
+  - choose:
+    - conditions:
+      - condition: numeric_state
+        entity_id: sensor.meter_f094
+        below: 15
+      - condition: numeric_state
+        entity_id: sensor.plug_mini_jp_41de_power
+        below: 3
+      sequence:
+      - target:
+          entity_id: switch.plug_mini_jp_41de
+        action: switch.turn_on
+        data: {}
+      - delay:
+          seconds: 10
+      - action: switch.turn_on
+        target:
+          entity_id: switch.bot_354b
+        data: {}
+      - action: notify.mobile_app_iphone_12mini_a2398
+        data:
+          message: "\U0001F525 ストーブをONにしました（{{ now().strftime('%H:%M:%S') }}）\n室温:
+            {{ states('sensor.meter_f094') }}℃"
+    - conditions:
+      - condition: numeric_state
+        entity_id: sensor.meter_f094
+        above: 17
+      - condition: numeric_state
+        entity_id: sensor.plug_mini_jp_41de_power
+        above: 3
+      sequence:
+      - action: switch.turn_off
+        target:
+          entity_id: switch.bot_354b
+        data: {}
+      - delay:
+          seconds: 10
+      - target:
+          entity_id: switch.plug_mini_jp_41de
+        action: switch.turn_off
+        data: {}
+      - action: notify.mobile_app_iphone_12mini_a2398
+        data:
+          message: '❄️ ストーブをOFFにしました（{{ now().strftime(''%H:%M:%S'') }}）
+
+            室温: {{ states(''sensor.meter_f094'') }}℃'
   mode: restart
 - id: '1738129881775'
   alias: 全体にアナウンス
