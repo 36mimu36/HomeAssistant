@@ -585,7 +585,7 @@
   mode: single
 - id: '1742360888818'
   alias: '[alert]火災報知器アラーム'
-  description: "移報接点が一定時間以上作動している場合、繰り返し警告を実施。 \nノーマルクローズ接点のため、火災報知器作動時は\"off\"状態になります。\n"
+  description: "移報接点が一定時間以上作動している場合、繰り返し警告を実施。 \nノーマルクローズ接点のため、火災報知器作動時は\"off\"状態になります。\nセンサーがunavailableになった場合も通知します。\n"
   triggers:
   - trigger: state
     entity_id:
@@ -605,6 +605,16 @@
     to:
     - 'on'
     id: alarm_recovered
+  - trigger: state
+    entity_id:
+    - binary_sensor.fire_alarm_contact
+    to:
+    - unavailable
+    for:
+      hours: 0
+      minutes: 1
+      seconds: 0
+    id: sensor_unavailable
   actions:
   - choose:
     - conditions:
@@ -612,11 +622,11 @@
         id: alarm_active
       sequence:
       - repeat:
-          count: 10
-          sequence:
+          while:
           - condition: state
             entity_id: binary_sensor.fire_alarm_contact
             state: 'off'
+          sequence:
           - action: notify.mobile_app_iphone_12mini_a2398
             continue_on_error: true
             data:
@@ -630,7 +640,7 @@
           - delay:
               hours: 0
               minutes: 0
-              seconds: 10
+              seconds: 30
               milliseconds: 0
     - conditions:
       - condition: trigger
@@ -644,6 +654,20 @@
         continue_on_error: true
         event_data:
           text: 火災報知器が復旧しました
+          cast_entity: group.google_home_devices_all
+          mode: info
+    - conditions:
+      - condition: trigger
+        id: sensor_unavailable
+      sequence:
+      - action: notify.mobile_app_iphone_12mini_a2398
+        continue_on_error: true
+        data:
+          message: 火災報知器センサーが応答していません。接続を確認してください。
+      - event: play_video
+        continue_on_error: true
+        event_data:
+          text: 火災報知器センサーが応答していません
           cast_entity: group.google_home_devices_all
           mode: info
   mode: restart
