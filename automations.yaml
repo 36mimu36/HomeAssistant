@@ -100,7 +100,7 @@
         action: switch.turn_on
         data: {}
       - delay:
-          seconds: 10
+          seconds: 60
       - action: switch.turn_on
         target:
           entity_id: switch.bot_354b
@@ -122,7 +122,7 @@
           entity_id: switch.bot_354b
         data: {}
       - delay:
-          seconds: 10
+          seconds: 60
       - target:
           entity_id: switch.plug_mini_jp_41de
         action: switch.turn_off
