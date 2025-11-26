@@ -90,13 +90,13 @@
     after: '23:00:00'
     before: 07:00:00
     enabled: false
-  - condition: state
-    entity_id: device_tracker.iphone_12mini_a2398
-    state:
-    - home
   actions:
   - choose:
     - conditions:
+      - condition: state
+        entity_id: device_tracker.iphone_12mini_a2398
+        state:
+        - home
       - condition: numeric_state
         entity_id: sensor.meter_f094
         below: 15
