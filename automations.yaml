@@ -111,6 +111,7 @@
           entity_id: switch.bot_354b
         data: {}
       - action: notify.mobile_app_iphone_12mini_a2398
+        continue_on_error: true
         data:
           message: "\U0001F525 ストーブをONにしました（{{ now().strftime('%H:%M:%S') }}）\n室温:
             {{ states('sensor.meter_f094') }}℃"
@@ -133,6 +134,7 @@
         action: switch.turn_off
         data: {}
       - action: notify.mobile_app_iphone_12mini_a2398
+        continue_on_error: true
         data:
           message: '❄️ ストーブをOFFにしました（{{ now().strftime(''%H:%M:%S'') }}）
 
