@@ -67,7 +67,9 @@
 
     【ヒステリシス】 ON: 15℃以下 / OFF: 17℃以上（頻繁な切替防止）
 
-    【在宅判定】 iPhoneがhome または いずれかのTVがON（他の家族はスマホ不所持のためTV電源で検知）'
+    【在宅判定】 iPhoneがhome または いずれかのTVがON（他の家族はスマホ不所持のためTV電源で検知）
+
+    【ログ】 /config/logs/stove_control.log に保存されます'
   triggers:
   - entity_id:
     - sensor.meter_f094
@@ -108,6 +110,11 @@
         entity_id: sensor.plug_mini_jp_41de_power
         below: 3
       sequence:
+      - alias: ログ記録（ストーブON）
+        action: notify.stove_control_log
+        continue_on_error: true
+        data:
+          message: "[ON] ストーブON - 室温: {{ states('sensor.meter_f094') }}℃, 消費電力: {{ states('sensor.plug_mini_jp_41de_power') }}W, トリガー: {{ trigger.id }}, 在宅: iPhone={{ states('device_tracker.iphone_12mini_a2398') }}, TV寝室={{ states('binary_sensor.tv_1f_bedroom_power') }}, TV居間={{ states('binary_sensor.tv_1f_livingroom_power') }}, TV和室={{ states('binary_sensor.tv_2f_jsroom_power') }}"
       - target:
           entity_id: switch.plug_mini_jp_41de
         action: switch.turn_on
@@ -131,6 +138,11 @@
         entity_id: sensor.plug_mini_jp_41de_power
         above: 3
       sequence:
+      - alias: ログ記録（ストーブOFF）
+        action: notify.stove_control_log
+        continue_on_error: true
+        data:
+          message: "[OFF] ストーブOFF - 室温: {{ states('sensor.meter_f094') }}℃, 消費電力: {{ states('sensor.plug_mini_jp_41de_power') }}W, トリガー: {{ trigger.id }}"
       - action: switch.turn_off
         target:
           entity_id: switch.bot_354b
@@ -147,6 +159,12 @@
           message: '❄️ ストーブをOFFにしました（{{ now().strftime(''%H:%M:%S'') }}）
 
             室温: {{ states(''sensor.meter_f094'') }}℃'
+    default:
+    - alias: ログ記録（条件不一致でスキップ）
+      action: notify.stove_control_log
+      continue_on_error: true
+      data:
+        message: "[SKIP] 条件不一致 - 室温: {{ states('sensor.meter_f094') }}℃, 消費電力: {{ states('sensor.plug_mini_jp_41de_power') }}W, トリガー: {{ trigger.id }}, 在宅: iPhone={{ states('device_tracker.iphone_12mini_a2398') }}, TV寝室={{ states('binary_sensor.tv_1f_bedroom_power') }}, TV居間={{ states('binary_sensor.tv_1f_livingroom_power') }}, TV和室={{ states('binary_sensor.tv_2f_jsroom_power') }}"
   mode: restart
 - id: '1738129881775'
   alias: 全体にアナウンス
@@ -595,7 +613,7 @@
   mode: single
 - id: '1742360888818'
   alias: '[alert]火災報知器アラーム'
-  description: "移報接点が一定時間以上作動している場合、繰り返し警告を実施。 \nノーマルクローズ接点のため、火災報知器作動時は\"off\"状態になります。\nセンサーがunavailableになった場合も通知します。\n"
+  description: "移報接点が一定時間以上作動している場合、繰り返し警告を実施。 \nノーマルクローズ接点のため、火災報知器作動時は\"off\"状態になります。\nセンサーがunavailableになった場合も通知します。\nログは /config/logs/fire_alarm.log に保存されます。\n"
   triggers:
   - trigger: state
     entity_id:
@@ -631,6 +649,11 @@
       - condition: trigger
         id: alarm_active
       sequence:
+      - alias: ログ記録（アラーム発報）
+        action: notify.fire_alarm_log
+        continue_on_error: true
+        data:
+          message: "[発報] 火災報知器が作動しました - センサー状態: {{ states('binary_sensor.fire_alarm_contact') }}"
       - repeat:
           while:
           - condition: state
@@ -647,6 +670,11 @@
               text: 火災報知器が作動中です!!
               cast_entity: group.google_home_devices_all
               mode: warning
+          - alias: ログ記録（警告継続）
+            action: notify.fire_alarm_log
+            continue_on_error: true
+            data:
+              message: "[継続警告] 火災報知器作動中 - センサー状態: {{ states('binary_sensor.fire_alarm_contact') }}"
           - delay:
               hours: 0
               minutes: 0
@@ -656,6 +684,11 @@
       - condition: trigger
         id: alarm_recovered
       sequence:
+      - alias: ログ記録（復旧）
+        action: notify.fire_alarm_log
+        continue_on_error: true
+        data:
+          message: "[復旧] 火災報知器が復旧しました - センサー状態: {{ states('binary_sensor.fire_alarm_contact') }}"
       - action: notify.mobile_app_iphone_12mini_a2398
         continue_on_error: true
         data:
@@ -670,6 +703,11 @@
       - condition: trigger
         id: sensor_unavailable
       sequence:
+      - alias: ログ記録（センサー異常）
+        action: notify.fire_alarm_log
+        continue_on_error: true
+        data:
+          message: "[異常] 火災報知器センサーが応答なし - センサー状態: {{ states('binary_sensor.fire_alarm_contact') }}"
       - action: notify.mobile_app_iphone_12mini_a2398
         continue_on_error: true
         data:

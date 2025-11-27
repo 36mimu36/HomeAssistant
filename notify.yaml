@@ -1,0 +1,14 @@
+# オートメーションログ用のファイル通知設定
+# /config/logs/ ディレクトリはconfiguration.yamlのallowlist_external_dirsで許可済み
+
+# 火災報知器のログ
+- platform: file
+  name: fire_alarm_log
+  filename: /config/logs/fire_alarm.log
+  timestamp: true
+
+# ストーブ制御のログ
+- platform: file
+  name: stove_control_log
+  filename: /config/logs/stove_control.log
+  timestamp: true
