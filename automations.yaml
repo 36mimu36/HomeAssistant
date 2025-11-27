@@ -1994,7 +1994,7 @@
     enabled: true
   mode: single
 - id: '1738807680775'
-  alias: '[auto] 台所_OFF_人感5分'
+  alias: '[auto] 1階台所_OFF_不在05分'
   description: '【トリガー】人感センサーが5分間OFF 【動作】照明OFF、ダッシュボードOFF'
   triggers:
   - trigger: state
@@ -2023,7 +2023,7 @@
       payload: screen_off
   mode: restart
 - id: '1739334694464'
-  alias: '[auto] 台所_ON_人感or開閉'
+  alias: '[auto] 1階台所_ON_人感or開閉'
   description: '【トリガー】人感センサー(enter/approach)または開閉センサーON 【動作】照明ON、ダッシュボードON'
   triggers:
   - entity_id: sensor.mmwave_kitchen_1f_presence_event
@@ -2053,7 +2053,7 @@
       payload: screen_on
   mode: single
 - id: '1740275643094'
-  alias: '[auto] 居間_OFF_不在30分'
+  alias: '[auto] 1階居間_OFF_不在30分'
   description: '【トリガー】人感センサーが30分間OFF 【動作】照明・こたつ・エアコン・ファンOFF 【除外】エアコンは4〜7時除外'
   triggers:
   - trigger: state
@@ -2220,7 +2220,7 @@
       message: 和室端で30分未検出だったので、こたつを消しました。
   mode: single
 - id: '1746603855859'
-  alias: '[auto] 2階和室_OFF_両方不在30分'
+  alias: '[auto] 2階和室_OFF_不在30分'
   description: '【トリガー】両センサーが30分間OFF(last_changed判定) 【動作】照明・TV OFF、通知送信'
   triggers:
   - entity_id:
