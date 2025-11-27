@@ -419,7 +419,7 @@
       mode: default
   mode: single
 - id: '1742360888818'
-  alias: '[alert] 火災報知器アラーム'
+  alias: '[alert] 火災報知器'
   description: "移報接点が一定時間以上作動している場合、繰り返し警告を実施。 \nノーマルクローズ接点のため、火災報知器作動時は\"off\"状態になります。\nセンサーがunavailableになった場合も通知します。\nログはログブック（履歴）に記録されます。\n"
   triggers:
   - trigger: state
@@ -1995,7 +1995,7 @@
   mode: single
 - id: '1738807680775'
   alias: '[auto] 1階台所_OFF_不在05分'
-  description: '【トリガー】人感センサーが5分間OFF 【動作】照明OFF、ダッシュボードOFF'
+  description: 【トリガー】人感センサーが5分間OFF 【動作】照明OFF、ダッシュボードOFF
   triggers:
   - trigger: state
     entity_id:
@@ -2024,7 +2024,7 @@
   mode: restart
 - id: '1739334694464'
   alias: '[auto] 1階台所_ON_人感or開閉'
-  description: '【トリガー】人感センサー(enter/approach)または開閉センサーON 【動作】照明ON、ダッシュボードON'
+  description: 【トリガー】人感センサー(enter/approach)または開閉センサーON 【動作】照明ON、ダッシュボードON
   triggers:
   - entity_id: sensor.mmwave_kitchen_1f_presence_event
     to:
@@ -2054,7 +2054,7 @@
   mode: single
 - id: '1740275643094'
   alias: '[auto] 1階居間_OFF_不在30分'
-  description: '【トリガー】人感センサーが30分間OFF 【動作】照明・こたつ・エアコン・ファンOFF 【除外】エアコンは4〜7時除外'
+  description: 【トリガー】人感センサーが30分間OFF 【動作】照明・こたつ・エアコン・ファンOFF 【除外】エアコンは4〜7時除外
   triggers:
   - trigger: state
     entity_id:
@@ -2105,8 +2105,8 @@
     - condition: not
       conditions:
       - condition: time
-        after: '04:00:00'
-        before: '07:00:00'
+        after: 04:00:00
+        before: 07:00:00
     - action: climate.turn_off
       metadata: {}
       data: {}
@@ -2173,7 +2173,7 @@
   mode: restart
 - id: '1745293242441'
   alias: '[auto] 2階和室中_OFF_不在30分'
-  description: '【トリガー】中の部屋センサーが30分間OFF 【動作】プラグOFF、通知送信'
+  description: 【トリガー】中の部屋センサーが30分間OFF 【動作】プラグOFF、通知送信
   triggers:
   - trigger: state
     entity_id:
@@ -2197,7 +2197,7 @@
   mode: single
 - id: '1745490332764'
   alias: '[auto] 2階和室端_OFF_不在30分'
-  description: '【トリガー】端の部屋センサーが30分間OFF 【動作】こたつOFF、通知送信'
+  description: 【トリガー】端の部屋センサーが30分間OFF 【動作】こたつOFF、通知送信
   triggers:
   - trigger: state
     entity_id:
@@ -2221,7 +2221,7 @@
   mode: single
 - id: '1746603855859'
   alias: '[auto] 2階和室_OFF_不在30分'
-  description: '【トリガー】両センサーが30分間OFF(last_changed判定) 【動作】照明・TV OFF、通知送信'
+  description: 【トリガー】両センサーが30分間OFF(last_changed判定) 【動作】照明・TV OFF、通知送信
   triggers:
   - entity_id:
     - binary_sensor.0x54ef441000dafb88_presence
