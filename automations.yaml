@@ -2217,7 +2217,7 @@
       entity_id: switch.kotatsu_2f_jsroom
   - action: notify.mobile_app_iphone_12mini_a2398
     data:
-      message: 和室端で30分未検出だったので、こたつを消しました。
+      message: 2階和室 端 30分間不在のため、自動オフしました。
   mode: single
 - id: '1746603855859'
   alias: '[auto] 2階和室_OFF_不在30分'
