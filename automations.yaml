@@ -1072,16 +1072,6 @@
         data: {}
         target:
           entity_id: media_player.jsroom_tv
-      - data:
-          message: "{{\n  '中の部屋' if trigger.entity_id == 'binary_sensor.0x54ef441000dae776_presence'\n
-            \ else '端の部屋'\n}} のセンサーがトリガーになりました。テレビを消しました。\n"
-        action: notify.mobile_app_iphone_12mini_a2398
-    default:
-    - data:
-        message: "{{\n  '中の部屋' if trigger.entity_id == 'binary_sensor.0x54ef441000dae776_presence'\n
-          \ else '端の部屋'\n}} のセンサーがトリガーになりました。テレビはオフのままでした。\n"
-      action: notify.mobile_app_iphone_12mini_a2398
-    enabled: true
   - action: notify.mobile_app_iphone_12mini_a2398
     data:
       message: 2階和室の二部屋で30分不在を検知
