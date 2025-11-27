@@ -361,10 +361,10 @@
       mode: caution
   mode: single
 - id: '1740275643094'
-  alias: '[auto] 居間_OFF_/5min'
-  description: 'このオートメーションは、5分ごとに人感センサーと家族センサーの状態を確認し、
+  alias: '[auto] 居間_OFF_/30min'
+  description: 'このオートメーションは、人感センサーの状態を確認し、
 
-    人感センサーが5分以上「off」の状態であれば、
+    人感センサーが30分以上「off」の状態であれば、
 
     機器の消し忘れ防止として自動で電源をオフにします。
 
@@ -434,8 +434,13 @@
         minutes: 0
         seconds: 1
         milliseconds: 0
-  - alias: エアコン
+  - alias: エアコン（4時〜7時は除外）
     sequence:
+    - condition: not
+      conditions:
+      - condition: time
+        after: '04:00:00'
+        before: '07:00:00'
     - action: climate.turn_off
       metadata: {}
       data: {}
