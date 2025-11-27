@@ -1059,7 +1059,7 @@
       entity_id:
       - light.jsroom_light_01_2
       - light.jsroom_light_02
-    action: switch.turn_off
+    action: light.turn_off
     data: {}
   - choose:
     - conditions:
