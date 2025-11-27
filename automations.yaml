@@ -114,7 +114,8 @@
         action: logbook.log
         data:
           name: ストーブ制御
-          message: "[ON] 室温: {{ states('sensor.meter_f094') }}℃, 消費電力: {{ states('sensor.plug_mini_jp_41de_power') }}W, トリガー: {{ trigger.id }}"
+          message: '[ON] 室温: {{ states(''sensor.meter_f094'') }}℃, 消費電力: {{ states(''sensor.plug_mini_jp_41de_power'')
+            }}W, トリガー: {{ trigger.id }}'
           entity_id: switch.plug_mini_jp_41de
       - target:
           entity_id: switch.plug_mini_jp_41de
@@ -143,7 +144,8 @@
         action: logbook.log
         data:
           name: ストーブ制御
-          message: "[OFF] 室温: {{ states('sensor.meter_f094') }}℃, 消費電力: {{ states('sensor.plug_mini_jp_41de_power') }}W, トリガー: {{ trigger.id }}"
+          message: '[OFF] 室温: {{ states(''sensor.meter_f094'') }}℃, 消費電力: {{ states(''sensor.plug_mini_jp_41de_power'')
+            }}W, トリガー: {{ trigger.id }}'
           entity_id: switch.plug_mini_jp_41de
       - action: switch.turn_off
         target:
@@ -166,7 +168,8 @@
       action: logbook.log
       data:
         name: ストーブ制御
-        message: "[SKIP] 室温: {{ states('sensor.meter_f094') }}℃, 消費電力: {{ states('sensor.plug_mini_jp_41de_power') }}W, トリガー: {{ trigger.id }}"
+        message: '[SKIP] 室温: {{ states(''sensor.meter_f094'') }}℃, 消費電力: {{ states(''sensor.plug_mini_jp_41de_power'')
+          }}W, トリガー: {{ trigger.id }}'
         entity_id: switch.plug_mini_jp_41de
   mode: restart
 - id: '1738129881775'
@@ -656,7 +659,7 @@
         action: logbook.log
         data:
           name: 火災報知器
-          message: "[発報] 火災報知器が作動しました"
+          message: '[発報] 火災報知器が作動しました'
           entity_id: binary_sensor.fire_alarm_contact
       - repeat:
           while:
@@ -678,7 +681,7 @@
             action: logbook.log
             data:
               name: 火災報知器
-              message: "[継続警告] 火災報知器作動中"
+              message: '[継続警告] 火災報知器作動中'
               entity_id: binary_sensor.fire_alarm_contact
           - delay:
               hours: 0
@@ -693,7 +696,7 @@
         action: logbook.log
         data:
           name: 火災報知器
-          message: "[復旧] 火災報知器が復旧しました"
+          message: '[復旧] 火災報知器が復旧しました'
           entity_id: binary_sensor.fire_alarm_contact
       - action: notify.mobile_app_iphone_12mini_a2398
         continue_on_error: true
@@ -713,7 +716,7 @@
         action: logbook.log
         data:
           name: 火災報知器
-          message: "[異常] 火災報知器センサーが応答なし"
+          message: '[異常] 火災報知器センサーが応答なし'
           entity_id: binary_sensor.fire_alarm_contact
       - action: notify.mobile_app_iphone_12mini_a2398
         continue_on_error: true
@@ -979,7 +982,10 @@
   - trigger: state
     entity_id:
     - binary_sensor.0x54ef441000dae776_presence
-    to: 'off'
+    from:
+    - 'on'
+    to:
+    - 'off'
     for:
       hours: 0
       minutes: 30
@@ -1000,7 +1006,10 @@
   - trigger: state
     entity_id:
     - binary_sensor.0x54ef441000dafb88_presence
-    to: 'off'
+    from:
+    - 'on'
+    to:
+    - 'off'
     for:
       hours: 0
       minutes: 30
@@ -1058,10 +1067,11 @@
         entity_id: input_boolean.tv_2f_jsroom
         state: 'on'
       sequence:
-      - target:
-          entity_id: switch.2f_he_shi_duan_terehi
-        action: switch.turn_off
+      - action: media_player.turn_off
+        metadata: {}
         data: {}
+        target:
+          entity_id: media_player.jsroom_tv
       - data:
           message: "{{\n  '中の部屋' if trigger.entity_id == 'binary_sensor.0x54ef441000dae776_presence'\n
             \ else '端の部屋'\n}} のセンサーがトリガーになりました。テレビを消しました。\n"
@@ -1071,9 +1081,7 @@
         message: "{{\n  '中の部屋' if trigger.entity_id == 'binary_sensor.0x54ef441000dae776_presence'\n
           \ else '端の部屋'\n}} のセンサーがトリガーになりました。テレビはオフのままでした。\n"
       action: notify.mobile_app_iphone_12mini_a2398
-    enabled: false
-  - delay: 00:01:00
-    enabled: false
+    enabled: true
   - action: notify.mobile_app_iphone_12mini_a2398
     data:
       message: 2階和室の二部屋で30分不在を検知
