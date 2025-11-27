@@ -70,7 +70,9 @@
 
     ※修正案
 
-    - 人がいない場合にはオフ動作を行う(ex.全テレビがOFF、かつ、雅人がジオフェンス外に居る)'
+    - 人がいない場合にはオフ動作を行う(ex.全テレビがOFF、かつ、雅人がジオフェンス外に居る)
+
+    【在宅判定】 iPhoneがhome または いずれかのTVがON（妻・父はスマホ不所持のためTV電源で検知）'
   triggers:
   - entity_id:
     - sensor.meter_f094
@@ -93,10 +95,21 @@
   actions:
   - choose:
     - conditions:
-      - condition: state
-        entity_id: device_tracker.iphone_12mini_a2398
-        state:
-        - home
+      - condition: or
+        conditions:
+        - condition: state
+          entity_id: device_tracker.iphone_12mini_a2398
+          state:
+          - home
+        - condition: state
+          entity_id: binary_sensor.tv_1f_bedroom_power
+          state: 'on'
+        - condition: state
+          entity_id: binary_sensor.tv_1f_livingroom_power
+          state: 'on'
+        - condition: state
+          entity_id: binary_sensor.tv_2f_jsroom_power
+          state: 'on'
       - condition: numeric_state
         entity_id: sensor.meter_f094
         below: 15
