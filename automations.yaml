@@ -114,7 +114,11 @@
         action: notify.stove_control_log
         continue_on_error: true
         data:
-          message: "[ON] ストーブON - 室温: {{ states('sensor.meter_f094') }}℃, 消費電力: {{ states('sensor.plug_mini_jp_41de_power') }}W, トリガー: {{ trigger.id }}, 在宅: iPhone={{ states('device_tracker.iphone_12mini_a2398') }}, TV寝室={{ states('binary_sensor.tv_1f_bedroom_power') }}, TV居間={{ states('binary_sensor.tv_1f_livingroom_power') }}, TV和室={{ states('binary_sensor.tv_2f_jsroom_power') }}"
+          message: '[ON] ストーブON - 室温: {{ states(''sensor.meter_f094'') }}℃, 消費電力:
+            {{ states(''sensor.plug_mini_jp_41de_power'') }}W, トリガー: {{ trigger.id
+            }}, 在宅: iPhone={{ states(''device_tracker.iphone_12mini_a2398'') }}, TV寝室={{
+            states(''binary_sensor.tv_1f_bedroom_power'') }}, TV居間={{ states(''binary_sensor.tv_1f_livingroom_power'')
+            }}, TV和室={{ states(''binary_sensor.tv_2f_jsroom_power'') }}'
       - target:
           entity_id: switch.plug_mini_jp_41de
         action: switch.turn_on
@@ -142,7 +146,9 @@
         action: notify.stove_control_log
         continue_on_error: true
         data:
-          message: "[OFF] ストーブOFF - 室温: {{ states('sensor.meter_f094') }}℃, 消費電力: {{ states('sensor.plug_mini_jp_41de_power') }}W, トリガー: {{ trigger.id }}"
+          message: '[OFF] ストーブOFF - 室温: {{ states(''sensor.meter_f094'') }}℃, 消費電力:
+            {{ states(''sensor.plug_mini_jp_41de_power'') }}W, トリガー: {{ trigger.id
+            }}'
       - action: switch.turn_off
         target:
           entity_id: switch.bot_354b
@@ -164,7 +170,11 @@
       action: notify.stove_control_log
       continue_on_error: true
       data:
-        message: "[SKIP] 条件不一致 - 室温: {{ states('sensor.meter_f094') }}℃, 消費電力: {{ states('sensor.plug_mini_jp_41de_power') }}W, トリガー: {{ trigger.id }}, 在宅: iPhone={{ states('device_tracker.iphone_12mini_a2398') }}, TV寝室={{ states('binary_sensor.tv_1f_bedroom_power') }}, TV居間={{ states('binary_sensor.tv_1f_livingroom_power') }}, TV和室={{ states('binary_sensor.tv_2f_jsroom_power') }}"
+        message: '[SKIP] 条件不一致 - 室温: {{ states(''sensor.meter_f094'') }}℃, 消費電力: {{
+          states(''sensor.plug_mini_jp_41de_power'') }}W, トリガー: {{ trigger.id }},
+          在宅: iPhone={{ states(''device_tracker.iphone_12mini_a2398'') }}, TV寝室={{
+          states(''binary_sensor.tv_1f_bedroom_power'') }}, TV居間={{ states(''binary_sensor.tv_1f_livingroom_power'')
+          }}, TV和室={{ states(''binary_sensor.tv_2f_jsroom_power'') }}'
   mode: restart
 - id: '1738129881775'
   alias: 全体にアナウンス
@@ -613,7 +623,8 @@
   mode: single
 - id: '1742360888818'
   alias: '[alert]火災報知器アラーム'
-  description: "移報接点が一定時間以上作動している場合、繰り返し警告を実施。 \nノーマルクローズ接点のため、火災報知器作動時は\"off\"状態になります。\nセンサーがunavailableになった場合も通知します。\nログは /config/logs/fire_alarm.log に保存されます。\n"
+  description: "移報接点が一定時間以上作動している場合、繰り返し警告を実施。 \nノーマルクローズ接点のため、火災報知器作動時は\"off\"状態になります。\nセンサーがunavailableになった場合も通知します。\nログは
+    /config/logs/fire_alarm.log に保存されます。\n"
   triggers:
   - trigger: state
     entity_id:
@@ -653,7 +664,8 @@
         action: notify.fire_alarm_log
         continue_on_error: true
         data:
-          message: "[発報] 火災報知器が作動しました - センサー状態: {{ states('binary_sensor.fire_alarm_contact') }}"
+          message: '[発報] 火災報知器が作動しました - センサー状態: {{ states(''binary_sensor.fire_alarm_contact'')
+            }}'
       - repeat:
           while:
           - condition: state
@@ -674,7 +686,8 @@
             action: notify.fire_alarm_log
             continue_on_error: true
             data:
-              message: "[継続警告] 火災報知器作動中 - センサー状態: {{ states('binary_sensor.fire_alarm_contact') }}"
+              message: '[継続警告] 火災報知器作動中 - センサー状態: {{ states(''binary_sensor.fire_alarm_contact'')
+                }}'
           - delay:
               hours: 0
               minutes: 0
@@ -688,7 +701,8 @@
         action: notify.fire_alarm_log
         continue_on_error: true
         data:
-          message: "[復旧] 火災報知器が復旧しました - センサー状態: {{ states('binary_sensor.fire_alarm_contact') }}"
+          message: '[復旧] 火災報知器が復旧しました - センサー状態: {{ states(''binary_sensor.fire_alarm_contact'')
+            }}'
       - action: notify.mobile_app_iphone_12mini_a2398
         continue_on_error: true
         data:
@@ -707,7 +721,8 @@
         action: notify.fire_alarm_log
         continue_on_error: true
         data:
-          message: "[異常] 火災報知器センサーが応答なし - センサー状態: {{ states('binary_sensor.fire_alarm_contact') }}"
+          message: '[異常] 火災報知器センサーが応答なし - センサー状態: {{ states(''binary_sensor.fire_alarm_contact'')
+            }}'
       - action: notify.mobile_app_iphone_12mini_a2398
         continue_on_error: true
         data:
@@ -1005,7 +1020,7 @@
       entity_id: switch.kotatsu_2f_jsroom
   - action: notify.mobile_app_iphone_12mini_a2398
     data:
-      message: 和室端で30分未検出だったので、こたつを消しました。
+      message: 2階和室 端 30分間不在のため、自動オフしました。
   mode: single
 - id: '1746603855859'
   alias: 2階和室 不在時
