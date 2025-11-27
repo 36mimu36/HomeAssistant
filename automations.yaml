@@ -186,7 +186,7 @@
       mode: default
   mode: single
 - id: '1738807680775'
-  alias: 台所_OFF_人感
+  alias: '[auto] 台所_OFF_人感'
   description: 5分ごとに人感センサーを評価してキッチン照明の消し忘れを防止
   triggers:
   - trigger: state
@@ -240,7 +240,7 @@
       option: '{{ tariff }}'
   mode: single
 - id: '1739334694464'
-  alias: 台所_ON_人感or開閉
+  alias: '[auto] 台所_ON_人感or開閉'
   description: 人感センサーまたは開閉センサーでキッチン照明をON
   triggers:
   - entity_id: sensor.mmwave_kitchen_1f_presence_event
@@ -361,7 +361,7 @@
       mode: caution
   mode: single
 - id: '1740275643094'
-  alias: 居間_OFF_/5min
+  alias: '[auto] 居間_OFF_/5min'
   description: 'このオートメーションは、5分ごとに人感センサーと家族センサーの状態を確認し、
 
     人感センサーが5分以上「off」の状態であれば、
@@ -618,7 +618,7 @@
       mode: default
   mode: single
 - id: '1742360888818'
-  alias: '[alert]火災報知器アラーム'
+  alias: '[alert] 火災報知器アラーム'
   description: "移報接点が一定時間以上作動している場合、繰り返し警告を実施。 \nノーマルクローズ接点のため、火災報知器作動時は\"off\"状態になります。\nセンサーがunavailableになった場合も通知します。\nログはログブック（履歴）に記録されます。\n"
   triggers:
   - trigger: state
@@ -976,7 +976,7 @@
     action: notify.mobile_app_iphone_12mini_a2398
   mode: single
 - id: '1745293242441'
-  alias: 2階和室 中 不在時
+  alias: '[auto] 2階和室 中 不在時'
   description: ''
   triggers:
   - trigger: state
@@ -1000,7 +1000,7 @@
       message: 2階和室 中 30分間不在のため、自動オフしました。
   mode: single
 - id: '1745490332764'
-  alias: 2階和室 端 不在時
+  alias: '[auto] 2階和室 端 不在時'
   description: ''
   triggers:
   - trigger: state
@@ -1024,7 +1024,7 @@
       message: 和室端で30分未検出だったので、こたつを消しました。
   mode: single
 - id: '1746603855859'
-  alias: 2階和室 不在時
+  alias: '[auto] 2階和室 不在時'
   description: "【概要】 2階和室の2つのPresenceセンサー （端の部屋: binary_sensor.0x54ef441000dafb88_presence、\n
     \ 中の部屋: binary_sensor.0x54ef441000dae776_presence）\nの両方が、30分以上連続して「off（不在）」のまま変化していない場合に実行。\n照明（シーリングライト、照明、エアコン）を自動でオフにし、
     テレビがON（input_booleanで監視）であればオフにする。\n実行後は1分間のクールダウン（再実行防止）を設ける。\n\n【待機の仕様と試行錯誤】
