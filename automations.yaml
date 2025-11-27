@@ -67,12 +67,7 @@
 
     【ヒステリシス】 ON: 15℃以下 / OFF: 17℃以上（頻繁な切替防止）
 
-
-    ※修正案
-
-    - 人がいない場合にはオフ動作を行う(ex.全テレビがOFF、かつ、雅人がジオフェンス外に居る)
-
-    【在宅判定】 iPhoneがhome または いずれかのTVがON（妻・父はスマホ不所持のためTV電源で検知）'
+    【在宅判定】 iPhoneがhome または いずれかのTVがON（他の家族はスマホ不所持のためTV電源で検知）'
   triggers:
   - entity_id:
     - sensor.meter_f094
@@ -87,11 +82,7 @@
   - trigger: time_pattern
     minutes: /30
     id: periodic
-  conditions:
-  - condition: time
-    after: '23:00:00'
-    before: 07:00:00
-    enabled: false
+  conditions: []
   actions:
   - choose:
     - conditions:

@@ -30,7 +30,7 @@
       {% endif %}
 
 
-# 1F 居間 TVの電源状態
+# 1F 寝室 TVの電源状態
 # 測定値：オン時約80W／スクリーンセーブ時約45W／オフ時約25W
 - binary_sensor:
   - name: "TV 1F Bedroom Power"
