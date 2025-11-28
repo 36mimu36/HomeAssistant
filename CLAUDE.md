@@ -1,14 +1,16 @@
 # CLAUDE.md
 
-このファイルは、Claude Code (claude.ai/code) がこのリポジトリのコードを操作する際のガイダンスを提供します。
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## 環境
 
-これは Home Assistant OS の設定リポジトリです。作業ディレクトリは `/root/config/` で、Home Assistant の設定ファイルが含まれています。
+これは Home Assistant OS の設定リポジトリです。
 
-- **Home Assistant Core**: バージョンは `/root/config/.HA_VERSION` に表示されています
+- **Home Assistant Core**: バージョンは `.HA_VERSION` に表示されています
 - **プライマリURL**: http://home.local:8123
-- **設定ルート**: `/root/config/`
+- **本番環境パス**: `/root/config/` (HA OS内)
+
+**注意**: このリポジトリはローカルにマウントされて編集され、本番環境（`/root/config/`）にデプロイされます。
 
 ## 設定アーキテクチャ
 
@@ -29,7 +31,7 @@ sensor: !include sensor.yaml
 
 ### カスタムコンポーネント
 
-カスタム統合は `/root/config/custom_components/` にあります：
+カスタム統合は `custom_components/` にあります：
 - `hacs/` - Home Assistant Community Store
 - `smartir/` - スマートIRリモコン
 - `delete/` - delete-file-home-assistant 統合
@@ -44,71 +46,70 @@ sensor: !include sensor.yaml
 
 ## 一般的なコマンド
 
-### 設定の検証
-```bash
-ha core check --config /root/config
-```
+以下のコマンドは **Home Assistant OS のターミナル（SSH等）** で実行します：
 
-### Home Assistant の再起動
 ```bash
+# 設定の検証
+ha core check
+
+# Home Assistant の再起動
 ha core restart
-```
 
-### ログの表示
-```bash
+# ログの表示
 ha core logs
-```
 
-### バックアップ管理
-```bash
+# バックアップ
 ha backups list
 ha backups new --name "backup-name"
-ha backups restore <slug>
-```
 
-### アドオン管理
-```bash
+# アドオン管理
 ha addons list
 ha addons info <addon-name>
-ha addons start <addon-name>
-ha addons stop <addon-name>
+
+# Core情報
+ha core info
 ```
 
-### コアコマンド
-```bash
-ha core info        # Core情報の表示
-ha core update      # Home Assistant Core の更新
-ha core rebuild     # Core コンテナの再構築
+## 主要ファイル
+
+- **automations.yaml**: 約2000行以上のオートメーション定義（大きなファイル）
+- **scripts.yaml**: スクリプト定義
+- **templates/**: テンプレートエンティティ（sensor, binary_sensor, switch, light, fan, lock, weather）
+- **esphome/**: ESPHomeデバイス設定
+- **secrets.yaml**: 機密情報（gitignore対象）
+
+## オートメーション記述パターン
+
+このリポジトリのオートメーションは以下の構造に従います：
+
+```yaml
+- id: 'タイムスタンプID'
+  alias: 日本語のオートメーション名
+  description: '動作概要と目的の詳細な説明'
+  triggers:
+    - trigger: state/numeric_state/time_pattern
+      entity_id: [エンティティリスト]
+      # トリガー固有の設定
+  conditions: []  # または条件リスト
+  actions:
+    - choose:  # 条件分岐が多い
+        - conditions: [...]
+          sequence: [...]
+    # または直接アクション
+  mode: restart/single/queued
 ```
 
-## ファイルパスと場所
-
-- **設定**: `/root/config/configuration.yaml`
-- **オートメーション**: `/root/config/automations.yaml` (多数のオートメーションを含む大きなファイル)
-- **スクリプト**: `/root/config/scripts.yaml`
-- **テンプレート**: `/root/config/templates/*.yaml`
-- **データベース**: `/root/config/home-assistant_v2.db` (SQLiteデータベース、gitignore対象)
-- **ログ**: `/root/config/home-assistant.log.1`, `home-assistant.log.old`
-- **シークレット**: `/root/config/secrets.yaml` (gitignore対象)
-- **ESPHome**: `/root/config/esphome/` (ESPHomeデバイス設定)
-- **ブループリント**: `/root/config/blueprints/` (オートメーションブループリント)
-- **Zigbee2MQTT**: `/root/config/zigbee2mqtt/` (gitignore対象)
-
-## Git の使用
-
-リポジトリには以下を除外する包括的な `.gitignore` があります：
-- 機密ファイル (secrets.yaml、データベースファイル)
-- ログと一時ファイル
-- 生成されたコンテンツ (tts/、www/、image/)
-- 統合固有のデータ (zigbee2mqtt/)
+**特徴的なパターン:**
+- `variables:` でテンプレート変数を定義してから使用
+- `repeat:` と `while:` で状態監視ループ
+- `choose:` で複雑な条件分岐
+- トリガーに `id:` を付けて `trigger.id` で判別
 
 ## 開発メモ
 
-- オートメーションやスクリプトを編集する際は、UI を使用するよりも YAML ファイルを直接編集することを推奨します（UI はファイル全体を再フォーマットする可能性があります）
-- テンプレートセンサーとエンティティは `templates/` ディレクトリ内の複数のファイルに分割されています
-- 設定では多くのエンティティ名と説明に日本語を使用しています
-- カスタムコンポーネントは `deps/` ディレクトリに依存関係がある場合があります
-- システムには go2rtc がカメラストリーミング用に含まれています（バイナリと設定がルートに存在）
+- オートメーションやスクリプトは **YAML ファイルを直接編集** すること（UIはファイル全体を再フォーマットする）
+- エンティティ名と説明は **日本語** を使用
+- go2rtc がカメラストリーミング用に含まれています（`go2rtc.yaml`）
 
 ## 参照ドキュメント
 
